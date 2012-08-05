@@ -1,0 +1,53 @@
+Index: src/client/cl_console.c
+===================================================================
+--- src/client/cl_console.c	(revision 40)
++++ src/client/cl_console.c	(revision 41)
+@@ -89,7 +89,8 @@
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+ 
+-	Q_strncpyz( chatField.buffer, Cmd_Args(), sizeof( chatField.buffer ) );
++	chatField.cursor = Q_snprintf( chatField.buffer, 
++		sizeof( chatField.buffer ), "%s ", Cmd_Args( ) );
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+ }
+ 
+@@ -104,7 +105,8 @@
+ 	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 25;
+-	Q_strncpyz( chatField.buffer, Cmd_Args(), sizeof( chatField.buffer ) );
++	chatField.cursor = Q_snprintf( chatField.buffer, 
++		sizeof( chatField.buffer ), "%s ", Cmd_Args( ) );
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+ }
+ 
+@@ -123,7 +125,8 @@
+ 	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+-	Q_strncpyz( chatField.buffer, Cmd_Args(), sizeof( chatField.buffer ) );
++	chatField.cursor = Q_snprintf( chatField.buffer, 
++		sizeof( chatField.buffer ), "%s ", Cmd_Args( ) );
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+ }
+ 
+@@ -142,7 +145,8 @@
+ 	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+-	Q_strncpyz( chatField.buffer, Cmd_Args(), sizeof( chatField.buffer ) );
++	chatField.cursor = Q_snprintf( chatField.buffer, 
++		sizeof( chatField.buffer ), "%s ", Cmd_Args( ) );
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+ }
+ 
+@@ -158,6 +162,8 @@
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 25;
+ 
++	chatField.cursor = Q_snprintf( chatField.buffer, 
++		sizeof( chatField.buffer ), "%s ", Cmd_Args( ) );
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+ }
+ 

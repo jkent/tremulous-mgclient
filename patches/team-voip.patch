@@ -1,0 +1,41 @@
+Index: src/client/cl_input.c
+===================================================================
+--- src/client/cl_input.c	(revision 1108)
++++ src/client/cl_input.c	(working copy)
+@@ -781,6 +781,36 @@
+ 				clc.voipTarget1 = clc.voipTarget2 = clc.voipTarget3 = all;
+ 			} else if (Q_stricmp(target, "none") == 0) {
+ 				clc.voipTarget1 = clc.voipTarget2 = clc.voipTarget3 = 0;
++			} else if (Q_stricmp(target, "team") == 0) {
++				char *t = Info_ValueForKey(cl.gameState.stringData +
++					cl.gameState.stringOffsets[CS_PLAYERS + clc.clientNum], "t");
++				int myteam, theirteam;
++				if(t[0])
++					myteam = atoi(t);
++				else
++				{
++					myteam = -1;
++					Com_Printf(S_COLOR_RED "Couldn't retrieve "
++						"client team information\n");
++				}
++				clc.voipTarget1 = clc.voipTarget2 = clc.voipTarget3 = 0;
++				for(i = 0; i < MAX_CLIENTS; i++)
++				{
++					t = Info_ValueForKey(cl.gameState.stringData +
++						cl.gameState.stringOffsets[ CS_PLAYERS + i ], "t");
++					if(!t[0])
++						continue;
++					theirteam = atoi(t);
++					if(myteam == theirteam)
++					{
++						if(i < 31)
++							clc.voipTarget1 |= (1 << i);
++						else if(i < 62)
++							clc.voipTarget2 |= (1 << (i-31));
++						else if(i < 93)
++							clc.voipTarget3 |= (1 << (i-62));
++					}
++				}
+ 			} else {
+ 				clc.voipTarget1 = clc.voipTarget2 = clc.voipTarget3 = 0;
+ 				const char *ptr = target;

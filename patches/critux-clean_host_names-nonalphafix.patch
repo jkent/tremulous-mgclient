@@ -1,0 +1,13 @@
+Index: src/client/cl_ui.c
+===================================================================
+--- src/client/cl_ui.c	(revision 22)
++++ src/client/cl_ui.c	(working copy)
+@@ -311,7 +311,7 @@
+ 			isBlack = qfalse;
+ 		
+ 		// Ignore non-alphanumeric characters
+-		if ( !isprint( *reader ) )
++		if ( !isprint( *reader ) && lastChar != '^' )
+ 			isGoodChar = qfalse;
+ 		else
+ 			skipSpaces = qfalse;

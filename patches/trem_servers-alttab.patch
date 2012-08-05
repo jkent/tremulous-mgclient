@@ -1,0 +1,186 @@
+Index: src/sdl/sdl_input.c
+===================================================================
+--- src/sdl/sdl_input.c	(revision 1064)
++++ src/sdl/sdl_input.c	(working copy)
+@@ -55,6 +55,8 @@
+ static qboolean mouseActive = qfalse;
+ static qboolean keyRepeatEnabled = qfalse;
+ 
++qboolean fullscreen_minimized = qfalse;
++
+ static cvar_t *in_mouse;
+ #ifdef MACOS_X_ACCELERATION_HACK
+ static cvar_t *in_disablemacosxmouseaccel;
+@@ -320,7 +322,7 @@
+ IN_DeactivateMouse
+ ===============
+ */
+-static void IN_DeactivateMouse( void )
++void IN_DeactivateMouse( void )
+ {
+ 	if (!mouseAvailable || !SDL_WasInit( SDL_INIT_VIDEO ) )
+ 		return;
+@@ -671,6 +673,20 @@
+ 	{
+ 		switch (e.type)
+ 		{
++			case SDL_ACTIVEEVENT:
++				if( ( e.active.state & SDL_APPACTIVE ) && e.active.gain )
++				{
++					if( fullscreen_minimized )
++					{ 
++#ifdef MACOS_X
++						Cvar_Set( "r_fullscreen", "1" );
++#endif
++						fullscreen_minimized = qfalse;
++					}
++					IN_ActivateMouse();
++				}
++				break;
++
+ 			case SDL_KEYDOWN:
+ 				IN_PrintKey(&e);
+ 				p = IN_TranslateSDLToQ3Key(&e.key.keysym, &key);
+@@ -733,8 +749,8 @@
+ {
+ 	IN_JoyMove( );
+ 
+-	// Release the mouse if the console if down and we're windowed
+-	if( ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) && !r_fullscreen->integer )
++	// Release the mouse if the console if down and we're windowed or if minimized
++	if( ( ( Key_GetCatcher( ) & KEYCATCH_CONSOLE ) && !r_fullscreen->integer ) || com_minimized->integer )
+ 		IN_DeactivateMouse( );
+ 	else
+ 		IN_ActivateMouse( );
+Index: src/sdl/sdl_glimp.c
+===================================================================
+--- src/sdl/sdl_glimp.c	(revision 1064)
++++ src/sdl/sdl_glimp.c	(working copy)
+@@ -657,6 +657,43 @@
+ 		SDL_GL_SwapBuffers();
+ 	}
+ 
++	if( r_minimize && r_minimize->integer )
++	{
++		extern qboolean fullscreen_minimized;
++		extern void IN_DeactivateMouse( void );
++		SDL_Surface *s = SDL_GetVideoSurface( );
++		qboolean    fullscreen = qfalse;
++		qboolean    minimized = qfalse;
++
++		fullscreen = ( s && ( s->flags & SDL_FULLSCREEN ) );
++
++#ifdef MACOS_X
++		// this is a bit crap, but the mac SDL_WM_IconifyWindow does not work
++		// on fullscreen windows, nor does the SDL_WM_ToggleFullscreen work
++		if( !fullscreen )
++		{
++			if( SDL_WM_IconifyWindow( ) )
++				IN_DeactivateMouse();
++			Cvar_Set( "r_minimize", "0" ); 
++		}
++		else if( r_fullscreen->integer ) 
++		{
++			Cvar_Set( "r_fullscreen", "0" );
++			fullscreen_minimized = qtrue;
++		}
++#else
++		minimized = ( SDL_WM_IconifyWindow( ) != 0 );
++		if( fullscreen && minimized )
++			fullscreen_minimized = qtrue;
++
++		// this shouldn't be necessary, but seems to prevent X11 mouse problems
++		if( minimized )
++			IN_DeactivateMouse();
++
++		Cvar_Set( "r_minimize", "0" ); 
++#endif // MACOS_X
++	}
++
+ 	if( r_fullscreen->modified )
+ 	{
+ 		qboolean    fullscreen;
+Index: src/renderer/tr_local.h
+===================================================================
+--- src/renderer/tr_local.h	(revision 1064)
++++ src/renderer/tr_local.h	(working copy)
+@@ -1033,6 +1033,7 @@
+ extern cvar_t	*r_pixelAspect;
+ 
+ extern cvar_t	*r_fullscreen;
++extern cvar_t	*r_minimize;
+ extern cvar_t	*r_gamma;
+ extern cvar_t	*r_displayRefresh;		// optional display refresh option
+ extern cvar_t	*r_ignorehwgamma;		// overrides hardware gamma capabilities
+Index: src/renderer/tr_init.c
+===================================================================
+--- src/renderer/tr_init.c	(revision 1064)
++++ src/renderer/tr_init.c	(working copy)
+@@ -124,6 +124,7 @@
+ cvar_t	*r_lodCurveError;
+ 
+ cvar_t	*r_fullscreen;
++cvar_t	*r_minimize;
+ 
+ cvar_t	*r_width;
+ cvar_t	*r_height;
+@@ -935,6 +936,7 @@
+ 	r_overBrightBits = ri.Cvar_Get ("r_overBrightBits", "1", CVAR_ARCHIVE | CVAR_LATCH );
+ 	r_ignorehwgamma = ri.Cvar_Get( "r_ignorehwgamma", "0", CVAR_ARCHIVE | CVAR_LATCH);
+ 	r_fullscreen = ri.Cvar_Get( "r_fullscreen", "1", CVAR_ARCHIVE );
++	r_minimize = ri.Cvar_Get( "r_minimize", "0", 0 );
+ 	r_width = ri.Cvar_Get( "r_width", "640", CVAR_ARCHIVE | CVAR_LATCH );
+ 	r_height = ri.Cvar_Get( "r_height", "480", CVAR_ARCHIVE | CVAR_LATCH );
+ 	r_pixelAspect = ri.Cvar_Get( "r_pixelAspect", "1", CVAR_ARCHIVE | CVAR_LATCH );
+Index: src/client/client.h
+===================================================================
+--- src/client/client.h	(revision 1064)
++++ src/client/client.h	(working copy)
+@@ -376,6 +376,7 @@
+ 
+ extern	cvar_t	*cl_lanForcePackets;
+ extern	cvar_t	*cl_autoRecordDemo;
++extern	cvar_t	*cl_altTab;
+ 
+ //=================================================
+ 
+Index: src/client/cl_main.c
+===================================================================
+--- src/client/cl_main.c	(revision 1064)
++++ src/client/cl_main.c	(working copy)
+@@ -79,6 +79,8 @@
+ 
+ cvar_t	*cl_guidServerUniq;
+ 
++cvar_t	*cl_altTab;
++
+ clientActive_t		cl;
+ clientConnection_t	clc;
+ clientStatic_t		cls;
+@@ -2692,6 +2694,8 @@
+ 
+ 	cl_guidServerUniq = Cvar_Get ("cl_guidServerUniq", "1", CVAR_ARCHIVE);
+ 
++	cl_altTab = Cvar_Get ("cl_altTab", "1", CVAR_ARCHIVE);
++
+ 	// userinfo
+ 	Cvar_Get ("name", Sys_GetCurrentUser( ), CVAR_USERINFO | CVAR_ARCHIVE );
+ 
+Index: src/client/cl_keys.c
+===================================================================
+--- src/client/cl_keys.c	(revision 1064)
++++ src/client/cl_keys.c	(working copy)
+@@ -1124,6 +1124,13 @@
+ 		}
+ 	}
+ 
++	if( cl_altTab->integer && key == K_TAB && down && keys[K_ALT].down )
++	{
++		Key_ClearStates();
++		Cvar_SetValue( "r_minimize", 1 );
++		return;
++	}
++
+ 	// console key is hardcoded, so the user can never unbind it
+ 	if (key == '`' || key == '~' ||
+ 		( key == K_ESCAPE && keys[K_SHIFT].down ) ) {

@@ -1,0 +1,20 @@
+Index: src/client/cl_ui.c
+===================================================================
+--- src/client/cl_ui.c	(revision 20)
++++ src/client/cl_ui.c	(working copy)
+@@ -372,11 +372,12 @@
+ 			break;
+ 	}
+ 	
+-	if ( cl_cleanHostNames->integer )
+-		G_SanitiseHostName( server->hostName );
+-	
+ 	if (server && buf) {
+ 		buf[0] = '\0';
++		
++		if ( cl_cleanHostNames->integer )
++			G_SanitiseHostName( server->hostName );
++		
+ 		Info_SetValueForKey( info, "hostname", server->hostName);
+ 		Info_SetValueForKey( info, "mapname", server->mapName);
+ 		Info_SetValueForKey( info, "clients", va("%i",server->clients));

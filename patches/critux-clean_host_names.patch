@@ -1,0 +1,123 @@
+Index: src/client/client.h
+===================================================================
+--- src/client/client.h	(revision 18)
++++ src/client/client.h	(working copy)
+@@ -345,6 +345,8 @@
+ extern	cvar_t	*cl_showTimeDelta;
+ extern	cvar_t	*cl_freezeDemo;
+ 
++extern	cvar_t	*cl_cleanHostNames;
++
+ extern	cvar_t	*cl_yawspeed;
+ extern	cvar_t	*cl_pitchspeed;
+ extern	cvar_t	*cl_run;
+Index: src/client/cl_main.c
+===================================================================
+--- src/client/cl_main.c	(revision 18)
++++ src/client/cl_main.c	(working copy)
+@@ -51,6 +51,8 @@
+ cvar_t	*cl_aviMotionJpeg;
+ cvar_t	*cl_forceavidemo;
+ 
++cvar_t	*cl_cleanHostNames;
++
+ cvar_t	*cl_freelook;
+ cvar_t	*cl_sensitivity;
+ cvar_t	*cl_platformSensitivity;
+@@ -2643,6 +2645,8 @@
+ 	rcon_client_password = Cvar_Get ("rconPassword", "", CVAR_TEMP );
+ 	cl_activeAction = Cvar_Get( "activeAction", "", CVAR_TEMP );
+ 
++	cl_cleanHostNames = Cvar_Get ("cl_cleanHostNames", "1", CVAR_ARCHIVE);
++
+ 	cl_timedemo = Cvar_Get ("timedemo", "0", 0);
+ 	cl_timedemoLog = Cvar_Get ("cl_timedemoLog", "", CVAR_ARCHIVE);
+ 	cl_autoRecordDemo = Cvar_Get ("cl_autoRecordDemo", "0", CVAR_ARCHIVE);
+Index: src/client/cl_ui.c
+===================================================================
+--- src/client/cl_ui.c	(revision 19)
++++ src/client/cl_ui.c	(working copy)
+@@ -275,6 +275,72 @@
+ }
+ 
+ /*
++==================
++G_SanitiseHostName
++
++Remove non-alphanumeric characters, black characters, and leading spaces from a host name
++==================
++*/
++static void G_SanitiseHostName( char *string )
++{
++	qboolean firstChar  = qfalse;
++	qboolean isBlack    = qfalse;
++	qboolean isGoodChar = qtrue;
++	qboolean skipSpaces = qtrue;
++	
++	char *reader = string;
++	char *writer = string;
++	
++	char lastChar = '\0';
++	
++	while( *reader )
++	{
++		// Ignore leading spaces
++		if( *reader == ' ' && ( skipSpaces == qtrue || lastChar == ' ' ) )
++			isGoodChar = qfalse;
++		
++		// Ignore black coloured characters
++		if ( lastChar == '^' && ColorIndex(*reader) == 0 )
++			isBlack = qtrue;
++		
++		if ( isBlack && *reader != '^' )
++			isGoodChar = qfalse;
++		else if ( isBlack && *reader == '^' )
++			isBlack = isGoodChar = qfalse;
++		else
++			isBlack = qfalse;
++		
++		// Ignore non-alphanumeric characters
++		if ( !isprint( *reader ) )
++			isGoodChar = qfalse;
++		else
++			skipSpaces = qfalse;
++
++		// Determine the first visible character
++		if ( !firstChar && lastChar != '^' && *reader != '^' )
++		{
++			// Strip the first visible character if it's a space
++			if ( *reader == ' ' )
++				isGoodChar = qfalse;
++			else
++				firstChar = qtrue;
++		}
++		
++		if ( isGoodChar == qtrue )
++		{
++			*writer = *reader;
++			writer++;
++		}
++		
++		isGoodChar = qtrue;
++		lastChar = *reader;
++		reader++;
++	}
++	
++	*writer = '\0';
++}
++
++/*
+ ====================
+ LAN_GetServerInfo
+ ====================
+@@ -305,6 +371,10 @@
+ 			}
+ 			break;
+ 	}
++	
++	if ( cl_cleanHostNames->integer )
++		G_SanitiseHostName( server->hostName );
++	
+ 	if (server && buf) {
+ 		buf[0] = '\0';
+ 		Info_SetValueForKey( info, "hostname", server->hostName);

@@ -1,0 +1,59 @@
+Index: src/qcommon/common.c
+===================================================================
+--- src/qcommon/common.c	(revision 61)
++++ src/qcommon/common.c	(working copy)
+@@ -2193,6 +2193,7 @@
+ 	netadr_t	evFrom;
+ 	byte		bufData[MAX_MSGLEN];
+ 	msg_t		buf;
++	char		*cmd;
+ 
+ 	MSG_Init( &buf, bufData, sizeof( bufData ) );
+ 
+@@ -2237,7 +2238,18 @@
+ 			CL_JoystickEvent( ev.evValue, ev.evValue2, ev.evTime );
+ 			break;
+ 		case SE_CONSOLE:
+-			Cbuf_AddText( (char *)ev.evPtr );
++			cmd = (char *)ev.evPtr;
++#ifndef DEDICATED
++			if ( cmd[ 0 ] == '\\' || cmd[ 0 ] == '/' )
++			{
++				cmd++;
++				Cbuf_AddText( cmd );
++			}
++			else
++				Cbuf_AddText( va( "cmd say \"%s\"", cmd ) );
++#else
++			Cbuf_AddText( cmd );
++#endif
+ 			Cbuf_AddText( "\n" );
+ 			break;
+ 		case SE_PACKET:
+Index: Makefile
+===================================================================
+--- Makefile	(revision 61)
++++ Makefile	(working copy)
+@@ -1284,7 +1284,6 @@
+   $(B)/client/sdl_input.o \
+   $(B)/client/sdl_snd.o \
+   \
+-  $(B)/client/con_passive.o \
+   $(B)/client/con_log.o \
+   $(B)/client/sys_main.o
+ 
+@@ -1358,10 +1357,12 @@
+ ifeq ($(PLATFORM),mingw32)
+   Q3OBJ += \
+     $(B)/client/win_resource.o \
+-    $(B)/client/sys_win32.o
++    $(B)/client/sys_win32.o \
++    $(B)/client/con_win32.o
+ else
+   Q3OBJ += \
+-    $(B)/client/sys_unix.o
++    $(B)/client/sys_unix.o \
++    $(B)/client/con_tty.o
+ endif
+ 
+ ifeq ($(USE_MUMBLE),1)

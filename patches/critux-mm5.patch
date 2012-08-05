@@ -1,0 +1,119 @@
+Index: src/client/cl_console.c
+===================================================================
+--- src/client/cl_console.c	(revision 15)
++++ src/client/cl_console.c	(revision 17)
+@@ -88,6 +88,7 @@
+ void Con_MessageMode_f (void) {
+ 	chat_playerNum = -1;
+ 	chat_team = qfalse;
++	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+ 
+@@ -102,6 +103,7 @@
+ void Con_MessageMode2_f (void) {
+ 	chat_playerNum = -1;
+ 	chat_team = qtrue;
++	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 25;
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+@@ -119,6 +121,7 @@
+ 		return;
+ 	}
+ 	chat_team = qfalse;
++	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+@@ -136,6 +139,7 @@
+ 		return;
+ 	}
+ 	chat_team = qfalse;
++	chat_admins = qfalse;
+ 	Field_Clear( &chatField );
+ 	chatField.widthInChars = 30;
+ 	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
+@@ -143,6 +147,21 @@
+ 
+ /*
+ ================
++Con_MessageMode5_f
++================
++*/
++void Con_MessageMode5_f (void) {
++	chat_playerNum = -1;
++	chat_team = qfalse;
++	chat_admins = qtrue;
++	Field_Clear( &chatField );
++	chatField.widthInChars = 25;
++
++	Key_SetCatcher( Key_GetCatcher( ) ^ KEYCATCH_MESSAGE );
++}
++
++/*
++================
+ Con_Clear_f
+ ================
+ */
+@@ -318,6 +337,7 @@
+ 	Cmd_AddCommand ("messagemode2", Con_MessageMode2_f);
+ 	Cmd_AddCommand ("messagemode3", Con_MessageMode3_f);
+ 	Cmd_AddCommand ("messagemode4", Con_MessageMode4_f);
++	Cmd_AddCommand ("messagemode5", Con_MessageMode5_f);
+ 	Cmd_AddCommand ("clear", Con_Clear_f);
+ 	Cmd_AddCommand ("condump", Con_Dump_f);
+ }
+@@ -617,6 +637,11 @@
+ 			SCR_DrawBigString( 8, 232, "Team Say:", 1.0f, qfalse );
+ 			skip = 11;
+ 		}
++		else if( chat_admins )
++		{
++			SCR_DrawBigString( 8, 232, "Admin Say:", 1.0f, qfalse );
++			skip = 11;
++		}
+ 		else
+ 		{ 
+ 			SCR_DrawBigString( 8, 232, "Say:", 1.0f, qfalse );
+Index: src/client/keys.h
+===================================================================
+--- src/client/keys.h	(revision 15)
++++ src/client/keys.h	(revision 17)
+@@ -44,6 +44,7 @@
+ extern	field_t	chatField;
+ extern	int				anykeydown;
+ extern	qboolean	chat_team;
++extern	qboolean	chat_admins;
+ extern	int			chat_playerNum;
+ 
+ void Key_WriteBindings( fileHandle_t f );
+Index: src/client/cl_keys.c
+===================================================================
+--- src/client/cl_keys.c	(revision 15)
++++ src/client/cl_keys.c	(revision 17)
+@@ -37,6 +37,7 @@
+ field_t		g_consoleField;
+ field_t		chatField;
+ qboolean	chat_team;
++qboolean	chat_admins;
+ 
+ int			chat_playerNum;
+ 
+@@ -736,11 +737,14 @@
+ 			else if (chat_team)
+ 
+ 				Com_sprintf( buffer, sizeof( buffer ), "say_team \"%s\"\n", chatField.buffer );
++
++			else if (chat_admins)
++
++				Com_sprintf( buffer, sizeof( buffer ), "say_admins \"%s\"\n", chatField.buffer );
++
+ 			else
+ 				Com_sprintf( buffer, sizeof( buffer ), "say \"%s\"\n", chatField.buffer );
+ 
+-
+-
+ 			CL_AddReliableCommand( buffer );
+ 		}
+ 		Key_SetCatcher( Key_GetCatcher( ) & ~KEYCATCH_MESSAGE );

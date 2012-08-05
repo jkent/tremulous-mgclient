@@ -1,0 +1,149 @@
+MercenariesGuild Client for Tremulous 1.1
+Release version: 1.011
+For Tremulous upstream revision: 1117
+
+----------------------
+Introduction:
+
+The MercenariesGuild Client for Tremulous 1.1 is a joint effort between several members of }MG{ under the leadership of benmachine and Lakitu7. Primarily, it exists because we were not pleased with the current binary releases offered by others. Particularly, if someone wants a reasonably up-to-date binary without compiling it his or herself, he or she must use offerings that take the "all features good and bad" approach to development, and/or were designed specifically to convert users toward competing projects. Thus, we wish to solve that by offering a sane alternative with less suck(TM). As with the other releases by members of our group, this project will also follow our usual standards of including our own numerous advancements, as well as those community patches that are good and reasonable, while omitting the rest.
+
+----------------------
+Features new and unique to our client at time of initial release:
+* Truetype/Opentype font support, console included (Lakitu7)
+* (Rewritten) color/alpha console customization (Lakitu7)
+* Ability to specify configs to automatically execute when you join each team, and when you play demos (Lakitu7)
+* Ability to load configs specific to different mods: mod.cfg (benmachine)
+* When returning from a pure server, correctly return to the state your client was in when you entered, instead of needing to restart to remove a mod or see your custom menus etc. again. (Lakitu7)
+* A /toggle command to let you make binds that cycle between various values (benmachine)
+* Ability to mute the client when alt-tabbed etc. Enable with s_muteWhenUnfocused. (Lakitu7)
+* Less spam to console upon mapchange without breaking the commands that manually call those print functions.  (benmachine)
+* Hacky workaround fix to the bug that gets some Windows users stuck in software gamma mode (Lakitu7)
+* Fixes to OpenAL error reporting and extension lists (benmachine)
+* Fix to improper handling of cvars created with seta, setu, sets (benmachine)
+* Fix to cvar setting (without /set) not parsing more than one argument (benmachine)
+* Novel compatibility patch to work with BOTH svn and 1.1-style resolution cvars and the menus that use them (Lakitu7)
+
+Features we wrote that have been seen before:
+* Ability to use VOIP to only your team (benmachine)
+* Additional security checks upon malicious qvms (benmachine)
+* (A better version of the) ability to bind arguments to Messagemodes (benmachine)
+* Convert black text to gray so that you can see it better (benmachine)
+* Fixes to key up/key down binds (benmachine)
+* cl_dlurloverride to allow users to specify their own location from which to download files (benmachine)
+* Include "base" in the "mods" menu to remove all mods (Lakitu7)
+* Increase the scrollback size of the console buffer so you can scroll up further.
+
+Patches from around the community:
+* Backporting (benmachine and many people over time)
+* Sort-by-ping fix for the internal server browser (Amanieu)
+* Strip non-alphanumeric characters from server names in the internal server browser (Critux)
+* Fix the Favorites menu, broken in SVN (Slacker)
+* Do not stop playing demos when various keys are pressed, regardless of the state of com_cameraMode (??)
+* Corrected behavior of colorcodes in text inputs (Amanieu + some changes by us)
+* Easier use of alt-tab to more easily switch in and out of Tremulous on various nonwindows platforms (Trem-servers)
+* Suppress playing music for a brief second while loading if music volume is 0 (DevHC)
+* Allow console output/input via stdout/stdin in not-windows (Amanieu + fixes by Lakitu7)
+
+Patches that are in the Tremulous and IOQ3 SVNs that may be new to you if you are upgrading from something else:
+* VOIP (yes, like Teamspeak)
+* GUID, GUIDServerUniq for adminning on servers
+* Ability to download pk3s more quickly via webservers using CURL
+
+----------------------
+Installation:
+
+Simply replace your current client executable with ours. Be sure to make a copy of your old one first in case something goes wrong. 
+
+Special note for Windows users:
+Windows users will need the DLL files also made available if they do not already have them. Also, the path that this client will use is that from SVN: Documents and Settings/You/Application Data/Tremulous. If you are upgrading from a tjw-based client, you will need to copy your stuff over from Documents and Settings/You/Local Settings/Application Data/Tremulous
+
+----------------------
+Documentation for individual patches that require more documentation:
+
+***
+Team Voip:
+Author: benmachine
+***
+Thanks to the work of Ryan C. Gordon a.k.a. icculus, Tremulous has support for voip. The original voip code added support for a cl_voipSendTarget cvar, but a value for team was not included, in order to maintain compatibility with a variety of q3 mods. This patch extends the VoIP code to recognise a value of "team" in cl_voipSendTarget and adjust the targets correspondingly. To use it, one can set up binds such as these:
+bind t "+voiprecord; set cl_voipSendTarget all"
+bind y "+voiprecord; set cl_voipSendTarget team"
+
+
+***
+Truetype/Opentype Font Support
+Author: Lakitu7, with help from the Xreal source, and a bit from benmachine
+***
+By linking the Freetype library and reviving/fixing some old Q3 code, the Xreal guys got support for TTF/OTF fonts working for their clients. With the help of their bugfixes, I got it going in IOQ3/Tremulous, while adding back-compatibility to not break the old fonts. Further, I've also added the ability to use these fonts in the console, which as far as I know is an entirely new feature to any opensource Q3-engine game. Mods can make use of the feature by simply calling for the use of whatever font via its qpath from any .menu file. Regular users can use it to modify their console font by using the cl_consoleFont cvar. To use, place the ttf/otf files in your base directory, or optionally a subdirectory of base. For example, I put mine in Program Files\Tremulous\base\fonts\example.ttf and set cl_consoleFont "fonts/example.ttf" Also available are cl_consoleFontSize and cl_consoleFontKerning (the distance between characters: negative values are allowed) cvars to tweak these. Fonts placed in pk3 files will not work on pure servers, so place them directly if you want them to do so. If you would like a nice set of free fonts, I recommend those available here: http://savannah.gnu.org/projects/freefont/. I also recommend using boldface fonts as they generally look better in console. cl_consoleFont defaults to "" (blank), which will use the regular console font you're used to. Note that this patch adds the additional requirement that you have the Freetype library/dll available. Linux users should already have this in most cases. Windows users can download it from wherever this client is located. When building from source, you will need to have these libraries (which are available for mingw here: http://sourceforge.net/project/showfiles.php?group_id=204414) or you can disable the feature entirely by building with USE_FREETYPE 0 in the makefile. 
+
+***
+Console color/alpha customizations
+Author: Lakitu7, though others have come up with it too
+***
+While making the above fonts patch work in console, I learned how to allow for further customization to the console and added the following cvars: 
+cl_consoleHeight: Controls what percent of the screen the console uses. Default 50 (half the screen)
+cl_consoleColor: (default 0.0 0.0 0.0 1.0) Controls the background color and transparency of the console in R G B Alpha quadruplet format. For instance, the default is the regular black + nontransparent. I personally use 0 0 0.05 0.9, which is a slightly transparent navy blue. 
+
+***
+Team-autoexec and demo-autoexec config files
+Author: Lakitu7
+***
+If you set the corresponding cvars, your client can automatically execute a config file for you when you change teams and/or when you play demos. People have been doing this with creative use of binds for years, but this works more intuitively/automatically and also doesn't break when you use /team auto or !putteam etc. The cvars all default to blank, which disables the feature. Set them to the name of a .cfg file (eg: "aliens.cfg") in your base directory and it will be /exec-ed upon these events. These files will never be written to. 
+cl_humanConfig
+cl_alienConfig
+cl_demoConfig
+cl_spectatorConfig
+
+***
+Fixes for client behavior when returning from pure servers
+Author: Lakitu7
+***
+This set of patches, in short, removes your client looking different after disconnecting from a server than it did when you connected. Mods (fs_game, and/or different pk3s within the same fs_game) that the server changed to automatically will be unloaded for you. Thus, you'll have no more need to restart after you play on whatever mod server in order to see your prefered HUD's menus again. *Note: as of 1.01, this feature occurs without doing a vid_restart, so no more flickering!
+
+***
+mod.cfg:
+Author: benmachine
+***
+In the default client, a file named autoexec.cfg is used to store binds and settings where they won't be overwritten like autogen.cfg is. However, unlike the autogen which is executed every time a mod is loaded, the autoexec is only loaded on the client startup. This can make it somewhat problematic to make mod-specific binds and settings, so in this client another file, named mod.cfg, is executed on every mod load. Like autoexec, it is never written by the client, so commands added there can be organised how you like.
+
+***
+Messagemode Arguments:
+Author: benmachine
+***
+All 5 messagemodes in this client accept arguments, which pre-fill the chat field. Useful for binding a key to private message a player or clan, e.g.
+/bind u messagemode /mt }MG{
+
+***
+QVM Security Patch:
+Author: benmachine
+***
+A default client, especially one with autodownloads on, is vulnerable to a number of exploits that allow a malicious server to ruin a client's gameplay experience, or even compromise the security of their computer. Several of the known exploits have been rendered impossible in this client.
+
+***
+toggle:
+Author: benmachine
+***
+The traditional /toggle command has been extended to provide greater functionality: it takes an unlimited number of arguments, and cycles the cvar specified through them. For example, the following two binds set page up to increase gamma and page down to decrease it, something that would normally take a series of vstrs:
+bind PGUP toggle r_gamma 1.0 1.2 1.6 2.0 3.0
+bind PGDN toggle r_gamma 3.0 3.0 1.6 1.2 1.0
+
+***
+s_muteWhenUnfocused:
+Author: Lakitu7
+***
+I made this patch because I thought that the (already-in-SVN) cvar s_muteWhenMinimized was unbroken because my sound didn't mute when I alt-tabbed out of Tremulous. However, that one only works when the game is in windowed mode and then actually *minimized*. Thus, I made a s_muteWhenUnfocused that supercedes that cvar and can produce the behavior that I had expected. Perhaps you will find it useful too. 
+
+***
+keyup/keydown bind improvements
+Author: benmachine
+***
+The default behaviour of binds involving +commands and normal commands in the same bind string is counterintuitive and at times problematic. In this client, they are much improved, so that every +command is handled on keyup, and every ordinary command is only interpreted on key down. For more information, look at the bug that inspired this patch:
+http://bugzilla.icculus.org/show_bug.cgi?id=3374
+
+
+----------------------
+Support:
+To contact the authors of this project regarding problems specific to it, please visit #mercenariesguild on irc.freenode.net. Alternately, you can use the appropriate current topic on the Mods section of the forums at Tremulous.net. If you are new to creating Tremulous servers and your problem is likely not specific to our release, you may still ask us for help, but may also want to consider asking in the more general venues: #tremulous, also on freenode, or the Troubleshooting section on the forums at Tremulous.net
+
+----------------------
+Credits: 
+This release includes patches by benmachine, Lakitu7, Amanieu, Critux, DevHC, Slacker, Trem-servers.net, and others. It is released under GPL, as is the main Tremulous project upon which it is based. 

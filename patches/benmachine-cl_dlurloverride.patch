@@ -1,0 +1,70 @@
+Index: src/client/client.h
+===================================================================
+--- src/client/client.h	(revision 1003)
++++ src/client/client.h	(working copy)
+@@ -378,6 +378,8 @@
+ extern	cvar_t	*cl_lanForcePackets;
+ extern	cvar_t	*cl_autoRecordDemo;
+ 
++extern  cvar_t  *cl_dlURLOverride;
++
+ //=================================================
+ 
+ //
+Index: src/client/cl_main.c
+===================================================================
+--- src/client/cl_main.c	(revision 1003)
++++ src/client/cl_main.c	(working copy)
+@@ -78,6 +78,8 @@
+ 
+ cvar_t	*cl_guidServerUniq;
+ 
++cvar_t  *cl_dlURLOverride;
++
+ clientActive_t		cl;
+ clientConnection_t	clc;
+ clientStatic_t		cls;
+@@ -1548,13 +1550,21 @@
+ 			s = localName + strlen(localName); // point at the nul byte
+ #ifdef USE_CURL
+ 		if(!(cl_allowDownload->integer & DLF_NO_REDIRECT)) {
+-			if(clc.sv_allowDownload & DLF_NO_REDIRECT) {
++			char *host = NULL;
++			if(*cl_dlURLOverride->string) {
++				Com_Printf("Overriding sv_dlURL "
++					"(%s) with cl_dlURLOverride "
++					"(%s)\n", clc.sv_dlURL, 
++					cl_dlURLOverride->string);
++				host = cl_dlURLOverride->string;
++			}
++			if(!host && clc.sv_allowDownload & DLF_NO_REDIRECT) {
+ 				Com_Printf("WARNING: server does not "
+ 					"allow download redirection "
+ 					"(sv_allowDownload is %d)\n",
+ 					clc.sv_allowDownload);
+ 			}
+-			else if(!*clc.sv_dlURL) {
++			else if(!host && !*clc.sv_dlURL) {
+ 				Com_Printf("WARNING: server allows "
+ 					"download redirection, but does not "
+ 					"have sv_dlURL set\n");
+@@ -1564,8 +1574,9 @@
+ 					"cURL library\n");
+ 			}
+ 			else {
++				if(!host) host = clc.sv_dlURL;
+ 				CL_cURL_BeginDownload(localName, va("%s/%s",
+-					clc.sv_dlURL, remoteName));
++					host, remoteName));
+ 				useCURL = qtrue;
+ 			}
+ 		}
+@@ -2690,6 +2701,8 @@
+ 
+ 	cl_guidServerUniq = Cvar_Get ("cl_guidServerUniq", "1", CVAR_ARCHIVE);
+ 
++	cl_dlURLOverride = Cvar_Get ("cl_dlURLOverride", "", CVAR_ARCHIVE);
++
+ 	// userinfo
+ 	playerName = getenv( "USER" ); 				// Unixy stuff
+ 	if( playerName == NULL )

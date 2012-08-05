@@ -1,0 +1,7 @@
+1.011: 
+* Fix last minor nagging issue in legacy resolution cvar support
+1.01:
+* Redo legacy r_mode/r_custom* support again: should work with all current menu/ui files too (Lakitu7)
+* Restore and fix stdin on non-dedicated windows clients (thanks Amanieu)
+* Don't require a vid_restart to do pure-disconnect ui fixing (thanks forque)
+* Fix color propagation in /echo (Amanieu)

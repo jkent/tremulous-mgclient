@@ -3339,6 +3339,10 @@ void CL_Init( void ) {
 
 	SCR_Init ();
 
+	#ifdef USE_LUA	
+	CL_LuaInit();
+	#endif
+
 //	Cbuf_Execute ();
 
 	Cvar_Set( "cl_running", "1" );
@@ -3373,6 +3377,10 @@ void CL_Shutdown( void ) {
 	recursive = qtrue;
 
 	CL_Disconnect( qtrue );
+
+	#ifdef USE_LUA	
+	CL_LuaShutdown();
+	#endif
 
 	S_Shutdown();
 	CL_ShutdownRef();

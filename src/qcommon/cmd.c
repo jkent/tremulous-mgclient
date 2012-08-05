@@ -24,6 +24,9 @@ Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA  02110-1301  USA
 
 #include "q_shared.h"
 #include "qcommon.h"
+#ifdef USE_LUA
+#include "../client/cl_lua.h"
+#endif
 
 #define	MAX_CMD_BUFFER	16384
 #define	MAX_CMD_LINE	1024
@@ -729,6 +732,12 @@ void	Cmd_ExecuteString( const char *text ) {
 	if ( !Cmd_Argc() ) {
 		return;		// no tokens
 	}
+
+	#ifdef USE_LUA	
+	if ( CL_LuaCommandHook() ) {
+		return;
+	}
+	#endif
 
 	// check registered command functions	
 	for ( prev = &cmd_functions ; *prev ; prev = &cmdFunc->next ) {

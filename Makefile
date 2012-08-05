@@ -52,6 +52,7 @@ endif
 #
 #############################################################################
 -include Makefile.local
+BUILD_SERVER=0
 BUILD_GAME_SO=0
 BUILD_GAME_QVM=0
 
@@ -94,6 +95,10 @@ endif
 
 ifndef GENERATE_DEPENDENCIES
 GENERATE_DEPENDENCIES=1
+endif
+
+ifndef USE_LUA
+USE_LUA=1
 endif
 
 ifndef USE_OPENAL
@@ -169,6 +174,7 @@ Q3LCCSRCDIR=$(MOUNT_DIR)/tools/lcc/src
 SDLHDIR=$(MOUNT_DIR)/SDL12
 LIBSDIR=$(MOUNT_DIR)/libs
 MASTERDIR=$(MOUNT_DIR)/master
+LUADIR=$(MOUNT_DIR)/lua
 TEMPDIR=/tmp
 
 # set PKG_CONFIG_PATH to influence this, e.g.
@@ -184,7 +190,7 @@ ifeq ($(shell which pkg-config > /dev/null; echo $$?),0)
 endif
 
 # version info
-VERSION=1.1.0_SVN1117M
+VERSION=1.1.0_SVN1117M-LUA
 
 #USE_SVN=
 #ifeq ($(wildcard .svn),.svn)
@@ -254,6 +260,10 @@ ifeq ($(PLATFORM),linux)
 
   ifeq ($(USE_CODEC_VORBIS),1)
     BASE_CFLAGS += -DUSE_CODEC_VORBIS
+  endif
+
+  ifeq ($(USE_LUA),1)
+    BASE_CFLAGS += -DLUA_USE_LINUX
   endif
 
   OPTIMIZE = -O3 -ffast-math -funroll-loops -fomit-frame-pointer
@@ -388,6 +398,10 @@ ifeq ($(PLATFORM),darwin)
   ifeq ($(USE_CODEC_VORBIS),1)
     BASE_CFLAGS += -DUSE_CODEC_VORBIS
     CLIENT_LDFLAGS += -lvorbisfile -lvorbis -logg
+  endif
+
+  ifeq ($(USE_LUA),1)
+    BASE_CFLAGS += -DLUA_USE_MACOSX
   endif
 
   BASE_CFLAGS += -D_THREAD_SAFE=1
@@ -1381,6 +1395,46 @@ Q3POBJ += \
 Q3POBJ_SMP += \
   $(B)/clientsmp/sdl_glimp.o
 
+ifeq ($(USE_LUA),1)
+  BASE_CFLAGS += -DUSE_LUA
+  Q3OBJ += \
+    $(B)/client/lapi.o \
+    $(B)/client/lcode.o \
+    $(B)/client/lctype.o \
+    $(B)/client/ldebug.o \
+    $(B)/client/ldo.o \
+    $(B)/client/ldump.o \
+    $(B)/client/lfunc.o \
+    $(B)/client/lgc.o \
+    $(B)/client/llex.o \
+    $(B)/client/lmem.o \
+    $(B)/client/lobject.o \
+    $(B)/client/lopcodes.o \
+    $(B)/client/lparser.o \
+    $(B)/client/lstate.o \
+    $(B)/client/lstring.o \
+    $(B)/client/ltable.o \
+    $(B)/client/ltm.o \
+    $(B)/client/lundump.o \
+    $(B)/client/lvm.o \
+    $(B)/client/lzio.o \
+    $(B)/client/linit.o \
+    \
+    $(B)/client/lauxlib.o \
+    $(B)/client/lbaselib.o \
+    $(B)/client/lbitlib.o \
+    $(B)/client/lcorolib.o \
+    $(B)/client/ldblib.o \
+    $(B)/client/liolib.o \
+    $(B)/client/lmathlib.o \
+    $(B)/client/loslib.o \
+    $(B)/client/lstrlib.o \
+    $(B)/client/ltablib.o \
+    $(B)/client/loadlib.o \
+    $(B)/client/ltremlib.o \
+    $(B)/client/cl_lua.o
+endif
+
 $(B)/tremulous.$(ARCH)$(BINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) -o $@ $(Q3OBJ) $(Q3POBJ) $(CLIENT_LDFLAGS) \
@@ -1646,6 +1700,9 @@ $(B)/client/%.o: $(SYSDIR)/%.c
 
 $(B)/client/%.o: $(SYSDIR)/%.rc
 	$(DO_WINDRES)
+
+$(B)/client/%.o: $(LUADIR)/%.c
+	$(DO_CC)
 
 
 $(B)/ded/%.o: $(ASMDIR)/%.s

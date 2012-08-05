@@ -54,6 +54,12 @@ void CL_Disconnect( qboolean showMainMenu ) {
 void CL_MapLoading( void ) {
 }
 
+#ifdef USE_LUA
+qboolean CL_LuaCommandHook( void ) {
+  return qfalse;
+}
+#endif
+
 qboolean CL_GameCommand( void ) {
   return qfalse;
 }

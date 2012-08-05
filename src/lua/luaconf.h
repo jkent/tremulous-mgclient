@@ -541,6 +541,12 @@
 */
 
 
+void CL_LuaWriteString( const char *s, size_t l );
+void CL_LuaWriteLine( void );
+#undef luai_writestring
+#undef luai_writeline
+#define luai_writestring(s,l)	CL_LuaWriteString(s,l)
+#define luai_writeline()	CL_LuaWriteLine()
 
 #endif
 

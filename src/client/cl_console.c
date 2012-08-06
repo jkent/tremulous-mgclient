@@ -284,7 +284,7 @@ void Con_CheckResize (void)
 	int		i, j, width, oldwidth, oldtotallines, numlines, numchars;
 	short	tbuf[CON_TEXTSIZE];
 
-	width = (SCREEN_WIDTH / SMALLCHAR_WIDTH) - 2;
+	width = (Cvar_VariableIntegerValue("r_width") / SMALLCHAR_WIDTH) - 2;
 
 	if (width == con.linewidth)
 		return;
@@ -333,6 +333,7 @@ void Con_CheckResize (void)
 
 	con.current = con.totallines - 1;
 	con.display = con.current;
+	g_console_field_width = width;
 }
 
 

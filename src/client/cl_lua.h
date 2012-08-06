@@ -1,5 +1,5 @@
-#ifndef _CL_SCRIPT_H
-#define _CL_SCRIPT_H
+#ifndef _CL_LUA_H
+#define _CL_LUA_H
 
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
@@ -18,5 +18,5 @@ qboolean CL_LuaLoadFile(const char *filename, int rets);
 void CL_LuaConsoleHook(const char *text);
 qboolean CL_LuaCommandHook(void);
 
-#endif
+#endif /* _CL_LUA_H */
 

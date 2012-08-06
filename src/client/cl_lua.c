@@ -229,6 +229,7 @@ void CL_LuaConsoleHook( const char *text )
 			lua_pop(cl_luaState, 1);
 		}
 	}
+	lua_pop(cl_luaState, 1);
 }
 
 /*
@@ -262,10 +263,11 @@ qboolean CL_LuaCommandHook( void )
 				lua_tostring(cl_luaState, -1));
 		}
 		else if ( lua_toboolean(cl_luaState, -1) ) {
+			lua_pop(cl_luaState, 2);
 			return qtrue;
 		}
 	}
-	lua_pop(cl_luaState, 1);
+	lua_pop(cl_luaState, 2);
 
 	lua_pushlightuserdata(cl_luaState, (void *)&cl_luaRegkeyCmd);
 	lua_gettable(cl_luaState, LUA_REGISTRYINDEX);
@@ -283,15 +285,16 @@ qboolean CL_LuaCommandHook( void )
 		if ( lua_pcall(cl_luaState, 2, 1, 0) ) {
 			CL_LuaPrintf("CL_LuaCommandHook: trem.cmd[\"%s\"]: %s\n",
 				Cmd_Argv(0), lua_tostring(cl_luaState, -1));
-				lua_pop(cl_luaState, 1);
+				lua_pop(cl_luaState, 2);
 				return qfalse;
 		}
 
 		i = lua_toboolean(cl_luaState, -1);
-		lua_pop(cl_luaState, 1);
+		lua_pop(cl_luaState, 2);
 		return (i == 0) ? qtrue : qfalse;
 	}
 
+	lua_pop(cl_luaState, 2);
 	return qfalse;
 }
 

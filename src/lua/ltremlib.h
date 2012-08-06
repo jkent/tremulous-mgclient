@@ -6,4 +6,5 @@
 #define LUA_TREMLIBNAME	"trem"
 LUALIB_API int (luaopen_trem) (lua_State *L);
 
-#endif
+#endif /* _ltremlib_h */
+

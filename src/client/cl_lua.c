@@ -19,6 +19,26 @@ static char *cl_luaWritePtr = cl_luaWriteBuf;
 	cl_luaPrintf = qfalse;  \
 }
 
+static const char *cl_luaInitScript = \
+  "local base = trem.cvar_get('fs_basepath').string\n" \
+  "local home = trem.cvar_get('fs_homepath').string\n" \
+  "local ext = string.match(package.cpath, '%.(%a+)$')\n" \
+  "package.path = home .. '/lua/?.lua;' .. " \
+    "home .. '/lua/?/init.lua;' .. " \
+    "base .. '/lua/?.lua;' .. " \
+    "base .. '/lua/?/init.lua'\n" \
+  "package.cpath = home .. '/lua/?.' .. ext .. ';' .. " \
+    "home .. '/lua/loadall.' .. ext .. ';' .. " \
+    "base .. '/lua/?.' .. ext .. ';' .. " \
+    "base .. '/lua/loadall.' .. ext\n" \
+  "base, home, ext = nil\n" \
+  "local fn = package.searchpath('autoexec', package.path)\n " \
+  "if fn then\n" \
+	"return dofile(fn)\n" \
+  "end\n" \
+  "print('CL_LuaInit: autoexec not found')\n" \
+  "print('CL_LuaInit: path: ' .. package.path)\n";
+
 /*
 ======================
 CL_LuaWriteString
@@ -112,11 +132,21 @@ void CL_LuaInit( void )
 	lua_setfield(cl_luaState, 1, "cmd");
 	lua_pop(cl_luaState, 1);
 
-	CL_LuaPrintf("CL_LuaInit OK\n");
-
-	CL_LuaLoadFile("autoexec.lua", 0);
-
 	Cmd_AddCommand("lua", CL_Lua_f);
+
+	if ( luaL_loadbuffer(cl_luaState, cl_luaInitScript, strlen(cl_luaInitScript), "init") ) {
+		CL_LuaPrintf("CL_LuaInit: loadbuffer: %s\n",
+			lua_tostring(cl_luaState, -1));
+		lua_pop(cl_luaState, 1);
+		return;
+	}
+    else if ( lua_pcall(cl_luaState, 0, 0, 0) ) {
+		CL_LuaPrintf("CL_LuaInit: %s\n",
+			lua_tostring(cl_luaState, -1));
+		lua_pop(cl_luaState, 1);
+	}
+
+	lua_gc(cl_luaState, LUA_GCCOLLECT, 0);
 }
 
 /*
@@ -214,22 +244,25 @@ void CL_LuaConsoleHook( const char *text )
 	lua_gettable(cl_luaState, LUA_REGISTRYINDEX);
 	lua_pushliteral(cl_luaState, "console");
 	lua_gettable(cl_luaState, -2);
-	if ( lua_isfunction(cl_luaState, -1) ) {
-		len = strlen(text);
-		if (text[len-1] == '\n') {
-			len -= 1;
-		} 
-		s = luaL_buffinitsize(cl_luaState, &b, len);
-		memcpy(s, text, len);
-		luaL_pushresultsize(&b, len);
-
-		if ( lua_pcall(cl_luaState, 1, 0, 0) ) {
-			CL_LuaPrintf("CL_LuaConsoleHook: trem.hook.console: %s\n",
-				lua_tostring(cl_luaState, -1));
-			lua_pop(cl_luaState, 1);
-		}
+	if ( !lua_isfunction(cl_luaState, -1) ) {
+		lua_pop(cl_luaState, 2);
+		return;
 	}
-	lua_pop(cl_luaState, 1);
+	lua_remove(cl_luaState, 1);
+
+	len = strlen(text);
+	if (text[len-1] == '\n') {
+		len -= 1;
+	} 
+	s = luaL_buffinitsize(cl_luaState, &b, len);
+	memcpy(s, text, len);
+	luaL_pushresultsize(&b, len);
+
+	if ( lua_pcall(cl_luaState, 1, 0, 0) ) {
+		CL_LuaPrintf("CL_LuaConsoleHook: trem.hook.console: %s\n",
+			lua_tostring(cl_luaState, -1));
+		lua_pop(cl_luaState, 1);
+	}
 }
 
 /*

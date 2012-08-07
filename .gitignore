@@ -1,6 +1,11 @@
+.cproject
+.project
+.settings
 *.d
 *.o
 *.so
+*.exe
+*.dll
 /build
 /src/tools/asm/q3asm
 /src/tools/q3asm

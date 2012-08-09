@@ -321,12 +321,8 @@ ifeq ($(PLATFORM),linux)
     CLIENT_LDFLAGS += -lrt
   endif
 
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(SDLHDIR)/include
-  endif
-
   ifeq ($(USE_FREETYPE),1)
-    CLIENT_LDFLAGS += -lfreetype
+    CLIENT_LDFLAGS += $(shell freetype-config --libs)
   endif
 
   ifeq ($(ARCH),x86)
@@ -463,14 +459,11 @@ ifeq ($(PLATFORM),mingw32)
     BASE_CFLAGS += $(OPENAL_CFLAGS)
     ifeq ($(USE_OPENAL_DLOPEN),1)
       BASE_CFLAGS += -DUSE_OPENAL_DLOPEN
-    else
-      CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
     endif
   endif
 
   ifeq ($(USE_FREETYPE),1)
-    BASE_CFLAGS += -DBUILD_FREETYPE
-    BASE_CFLAGS += -I/include/freetype2
+    BASE_CFLAGS += -DBUILD_FREETYPE $(shell freetype-config --cflags)
   endif
 
   ifeq ($(USE_CODEC_VORBIS),1)
@@ -489,24 +482,22 @@ ifeq ($(PLATFORM),mingw32)
 
   BINEXT=.exe
 
-  LDFLAGS= -lws2_32 -lwinmm
+  LDFLAGS= -static-libgcc -lws2_32 -lwinmm
   CLIENT_LDFLAGS = -mwindows -lgdi32 -lole32 -lopengl32
 
+  ifeq ($(USE_OPENAL),1)
+    ifneq ($(USE_OPENAL_DLOPEN),1)
+      CLIENT_LDFLAGS += $(OPENAL_LDFLAGS)
+    endif
+  endif
+
   ifeq ($(USE_FREETYPE),1)
-    CLIENT_LDFLAGS += -lfreetype
+    CLIENT_LDFLAGS += $(shell freetype-config --prefix)/lib/libfreetype.a
   endif
 
   ifeq ($(USE_CURL),1)
-    BASE_CFLAGS += -DUSE_CURL
-    BASE_CFLAGS += $(CURL_CFLAGS)
-    ifneq ($(USE_CURL_DLOPEN),1)
-      ifeq ($(USE_LOCAL_HEADERS),1)
-        BASE_CFLAGS += -DCURL_STATICLIB
-        CLIENT_LDFLAGS += $(LIBSDIR)/win32/libcurl.a
-      else
-        CLIENT_LDFLAGS += $(CURL_LIBS)
-      endif
-    endif
+    BASE_CFLAGS += -DUSE_CURL -DCURL_STATICLIB $(CURL_CFLAGS)
+    CLIENT_LDFLAGS += $(shell curl-config --prefix)/lib/libcurl.a
   endif
 
   ifeq ($(USE_CODEC_VORBIS),1)
@@ -524,15 +515,9 @@ ifeq ($(PLATFORM),mingw32)
 
   # libmingw32 must be linked before libSDLmain
   CLIENT_LDFLAGS += -lmingw32
-  ifeq ($(USE_LOCAL_HEADERS),1)
-    BASE_CFLAGS += -I$(SDLHDIR)/include
-    CLIENT_LDFLAGS += $(LIBSDIR)/win32/libSDLmain.a \
-                      $(LIBSDIR)/win32/libSDL.dll.a
-  else
-    BASE_CFLAGS += $(SDL_CFLAGS)
-    CLIENT_LDFLAGS += $(SDL_LIBS)
-  endif
-
+  BASE_CFLAGS += $(SDL_CFLAGS)
+  CLIENT_LDFLAGS += $(shell sdl-config --prefix)/lib/libSDLmain.a \
+                    $(shell sdl-config --prefix)/lib/libSDL.a -ldxguid
 
 
   BUILD_CLIENT_SMP = 0

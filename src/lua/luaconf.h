@@ -540,6 +540,7 @@
 ** without modifying the main part of the file.
 */
 
+#ifndef LUA_STANDALONE
 
 void CL_LuaWriteString( const char *s, size_t l );
 void CL_LuaWriteLine( void );
@@ -557,6 +558,8 @@ void CL_LuaWriteLine( void );
 #define LUA_PATH_DEFAULT  "?.lua;?/init.lua"
 #define LUA_CPATH_DEFAULT "?.so;loadall.so"
 #endif
+
+#endif /* ifndef LUA_STANDALONE */
 
 #endif
 

@@ -7,7 +7,18 @@
 #include "../lua/lauxlib.h"
 #include "../lua/lualib.h"
 
-#define MAX_LUAFILE 16384
+
+/* cl_lua_main_init.lua */
+
+extern unsigned char cl_luaMainInit[];
+extern size_t cl_luaMainInit_size;
+
+
+/* cl_lua.c */
+
+struct cl_luaMainData_t {
+	lua_State *L;
+};
 
 extern qboolean cl_luaCmdExec;
 
@@ -18,5 +29,18 @@ qboolean CL_LuaLoadFile(const char *filename, int rets);
 void CL_LuaConsoleHook(const char *text);
 qboolean CL_LuaCommandHook(void);
 
-#endif /* _CL_LUA_H */
 
+/* cl_lua_print.c */
+
+#define CL_LuaPrintf(...) { \
+		cl_luaPrintf = qtrue; \
+		Com_Printf(__VA_ARGS__); \
+		cl_luaPrintf = qfalse; \
+}
+
+extern qboolean cl_luaPrintf;
+
+void CL_LuaWriteString( const char *s, size_t l );
+void CL_LuaWriteLine( void );
+
+#endif /* _CL_LUA_H */

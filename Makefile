@@ -1014,6 +1014,7 @@ makedirs:
 	@if [ ! -d $(B)/tools/rcc ];then $(MKDIR) $(B)/tools/rcc;fi
 	@if [ ! -d $(B)/tools/cpp ];then $(MKDIR) $(B)/tools/cpp;fi
 	@if [ ! -d $(B)/tools/lburg ];then $(MKDIR) $(B)/tools/lburg;fi
+	@if [ ! -d $(B)/tools/lua ];then $(MKDIR) $(B)/tools/lua;fi
 
 #############################################################################
 # QVM BUILD TOOLS
@@ -1165,6 +1166,98 @@ $(Q3ASM): $(Q3ASMOBJ)
 	$(echo_cmd) "LD $@"
 	$(Q)$(CC) $(TOOLS_LDFLAGS) -o $@ $^
 
+#############################################################################
+# STANDALONE LUA
+#############################################################################
+
+LUA_CFLAGS = -g -O2 -Wall -DLUA_STANDALONE -DLUA_COMPAT_ALL
+LUA_LDFLAGS = -lm
+
+ifeq ($(PLATFORM),linux)
+  LUA_CFLAGS += -DLUA_USE_LINUX
+  LUA_LDFLAGS += -Wl,-E -ldl -lreadline -lncurses
+else
+ifeq ($(PLATFORM),darwin)
+  LUA_CFLAGS += -DLUA_USE_MACOSX
+  LUA_LDFLAGS += -lreadline
+else
+ifeq ($(PLATFORM),mingw32)
+  # nothing required
+else
+ifeq ($(PLATFORM),freebsd)
+  LUA_CFLAGS += -DLUA_USE_LINUX
+  LUA_LDFLAGS += -Wl,-E -lreadline
+ifneq (,$(filter $(PLATFORM),openbsd netbsd))
+  LUA_CFLAGS += -DLUA_USE_POSIX -DLUA_USE_DLOPEN
+  LUA_LDFLAGS += -Wl,-E
+endif # openbsd netbsd
+endif # freebsd
+endif # mingw32
+endif # darwin
+endif # Linux
+
+ifeq ($(GENERATE_DEPENDENCIES),1)
+  LUA_CFLAGS += -MMD -MF $(@:.o=.d)
+endif
+
+LUA         = $(B)/tools/lua/lua$(BINEXT)
+LUA_BIN2C   = $(LUA) $(CDIR)/lua/bin2c.lua
+
+define DO_LUA_CC
+$(echo_cmd) "LUA_CC $<"
+$(Q)$(CC) $(LUA_CFLAGS) -o $@ -c $<
+endef
+
+define DO_LUA_BIN2C
+$(echo_cmd) "LUA_BIN2C $<"
+$(Q)$(LUA_BIN2C) $< > $@
+endef
+
+LUABASEOBJ = \
+  $(B)/tools/lua/lapi.o \
+  $(B)/tools/lua/lcode.o \
+  $(B)/tools/lua/lctype.o \
+  $(B)/tools/lua/ldebug.o \
+  $(B)/tools/lua/ldo.o \
+  $(B)/tools/lua/ldump.o \
+  $(B)/tools/lua/lfunc.o \
+  $(B)/tools/lua/lgc.o \
+  $(B)/tools/lua/llex.o \
+  $(B)/tools/lua/lmem.o \
+  $(B)/tools/lua/lobject.o \
+  $(B)/tools/lua/lopcodes.o \
+  $(B)/tools/lua/lparser.o \
+  $(B)/tools/lua/lstate.o \
+  $(B)/tools/lua/lstring.o \
+  $(B)/tools/lua/ltable.o \
+  $(B)/tools/lua/ltm.o \
+  $(B)/tools/lua/lundump.o \
+  $(B)/tools/lua/lvm.o \
+  $(B)/tools/lua/lzio.o \
+  \
+  $(B)/tools/lua/lauxlib.o \
+  $(B)/tools/lua/lbaselib.o \
+  $(B)/tools/lua/lbitlib.o \
+  $(B)/tools/lua/lcorolib.o \
+  $(B)/tools/lua/ldblib.o \
+  $(B)/tools/lua/liolib.o \
+  $(B)/tools/lua/lmathlib.o \
+  $(B)/tools/lua/loslib.o \
+  $(B)/tools/lua/lstrlib.o \
+  $(B)/tools/lua/ltablib.o \
+  $(B)/tools/lua/loadlib.o \
+  \
+  $(B)/tools/lua/linit.o
+
+LUAOBJ = \
+  $(B)/tools/lua/lua.o
+
+$(B)/tools/lua/%.o: $(LUADIR)/%.c
+	$(DO_LUA_CC)
+
+$(LUA): $(LUABASEOBJ) $(LUAOBJ)
+	$(echo_cmd) "LD $@"
+	$(Q)$(CC) $(LUA_LDFLAGS) -o $@ $^
 
 #############################################################################
 # CLIENT/SERVER
@@ -1432,7 +1525,15 @@ ifeq ($(USE_LUA),1)
     $(B)/client/ltablib.o \
     $(B)/client/loadlib.o \
     $(B)/client/ltremlib.o \
-    $(B)/client/cl_lua.o
+    $(B)/client/cl_lua.o \
+    $(B)/client/cl_lua_main_init.o \
+    $(B)/client/cl_lua_print.o
+
+$(B)/client/%.c: $(CDIR)/lua/%.lua $(LUA_BIN2C)
+	$(DO_LUA_BIN2C)
+
+$(B)/client/%.o: $(B)/client/%.c
+	$(DO_CC)
 endif
 
 $(B)/tremulous.$(ARCH)$(BINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)

@@ -1,6 +1,7 @@
 #include "cl_lua.h"
+#include "../lua/lqueuelib.h"
 
-static struct cl_luaMainData_t cl_luaMainData = {0};
+struct cl_luaMasterData_t cl_luaMasterData = {0};
 qboolean cl_luaCmdExec = qfalse;
 
 static const char cl_luaRegkeyHook = 0;
@@ -14,7 +15,7 @@ CL_Lua_f
 */
 void CL_Lua_f( void )
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
 	if ( Cmd_Argc() == 2 && !Q_stricmp(Cmd_Argv(1), "restart") ) {
 		CL_LuaRestart();
@@ -47,15 +48,25 @@ CL_LuaInit
 */
 void CL_LuaInit( void )
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	if (self->L) {
+		Com_Printf("CL_LuaInit: already initialized\n");
+		return;
+	}
 
 	self->L = luaL_newstate();
-
 	if ( !self->L ) {
-		Com_Error(ERR_FATAL, "CL_LuaInit: failed\n");
+		Com_Printf("CL_LuaInit: failed\n");
 	}
 
 	luaL_openlibs(self->L);
+
+	if ( CL_LuaSlaveStart() ) {
+		lua_close(self->L);
+		self->L = NULL;
+		return;
+	}
 
 	lua_getglobal(self->L, "trem");
 	lua_newtable(self->L);
@@ -75,8 +86,8 @@ void CL_LuaInit( void )
 
 	Cmd_AddCommand("lua", CL_Lua_f);
 
-	if ( luaL_loadbuffer(self->L, (const char *) cl_luaMainInit,
-			cl_luaMainInit_size, "main_init") ) {
+	if ( luaL_loadbuffer(self->L, (const char *) cl_luaMasterInit,
+			cl_luaMasterInit_size, "master_init") ) {
 		CL_LuaPrintf("CL_LuaInit: loadbuffer: %s\n",
 				lua_tostring(self->L, -1));
 		lua_pop(self->L, 1);
@@ -99,9 +110,13 @@ CL_LuaShutdown
 */
 void CL_LuaShutdown( void )
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	CL_LuaSlaveStop();
 
 	Cmd_RemoveCommand("lua");
+
+	luaclose_queue(self->L);
 
 	if ( self->L ) {
 		lua_close(self->L);
@@ -127,7 +142,7 @@ CL_LuaConsoleHook
 */
 void CL_LuaConsoleHook( const char *text )
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
 	luaL_Buffer b;
 	int len;
@@ -169,7 +184,7 @@ CL_LuaCommandHook
 */
 static int CL_LuaCommandHookCall( void ) /* -2 +0 */
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
 	int argc, i;
 
@@ -198,7 +213,7 @@ static int CL_LuaCommandHookCall( void ) /* -2 +0 */
 
 qboolean CL_LuaCommandHook( void )
 {
-	struct cl_luaMainData_t *self = &cl_luaMainData;
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
 	int n;
 

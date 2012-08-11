@@ -7,19 +7,27 @@
 #include "../lua/lauxlib.h"
 #include "../lua/lualib.h"
 
+#ifdef USE_LOCAL_HEADERS
+#	include "SDL.h"
+#	include "SDL_thread.h"
+#else
+#	include <SDL.h>
+#	include <SDL_thread.h>
+#endif
 
-/* cl_lua_main_init.lua */
+/* cl_lua_master_init.lua */
 
-extern unsigned char cl_luaMainInit[];
-extern size_t cl_luaMainInit_size;
+extern unsigned char cl_luaMasterInit[];
+extern size_t cl_luaMasterInit_size;
 
 
 /* cl_lua.c */
 
-struct cl_luaMainData_t {
+struct cl_luaMasterData_t {
 	lua_State *L;
 };
 
+extern struct cl_luaMasterData_t cl_luaMasterData;
 extern qboolean cl_luaCmdExec;
 
 void CL_LuaInit(void);
@@ -40,7 +48,26 @@ qboolean CL_LuaCommandHook(void);
 
 extern qboolean cl_luaPrintf;
 
-void CL_LuaWriteString( const char *s, size_t l );
-void CL_LuaWriteLine( void );
+void CL_LuaWriteString( void *p, const char *s );
+void CL_LuaWriteLine( void *p );
+
+
+/* cl_lua_slave_init.lua */
+
+extern unsigned char cl_luaSlaveInit[];
+extern size_t cl_luaSlaveInit_size;
+
+
+/* cl_lua_slave.c */
+
+struct cl_luaSlaveData_t {
+	lua_State *L;
+	volatile qboolean stop;
+	SDL_Thread *thread;
+};
+
+qboolean CL_LuaSlaveStart( void );
+qboolean CL_LuaSlaveStop( void );
+
 
 #endif /* _CL_LUA_H */

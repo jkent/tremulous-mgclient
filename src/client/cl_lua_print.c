@@ -2,21 +2,21 @@
 
 qboolean cl_luaPrintf = qfalse;
 
-#define CL_LUA_WRITEBUF_SIZE 4096
-static char cl_luaWriteBuf[CL_LUA_WRITEBUF_SIZE];
-static char *cl_luaWritePtr = cl_luaWriteBuf;
-
 
 /*
 ======================
 CL_LuaWriteString
 ======================
 */
-void CL_LuaWriteString( const char *s, size_t l )
+void CL_LuaWriteString( void *p, const char *s )
 {
-	if ( cl_luaWritePtr - cl_luaWriteBuf + l + 2 < CL_LUA_WRITEBUF_SIZE ) {
-		memcpy(cl_luaWritePtr, s, l);
-		cl_luaWritePtr += l;
+	lua_State *L = (lua_State *)p;
+
+	if (L == cl_luaMasterData.L) {
+		CL_LuaPrintf("%s", s);
+	}
+	else {
+		/* communicate */
 	}
 }
 
@@ -25,10 +25,14 @@ void CL_LuaWriteString( const char *s, size_t l )
 CL_LuaWriteLine
 ======================
 */
-void CL_LuaWriteLine( void )
+void CL_LuaWriteLine( void *p )
 {
-	*cl_luaWritePtr++ = '\n';
-	*cl_luaWritePtr = '\0';
-	cl_luaWritePtr = cl_luaWriteBuf;
-	CL_LuaPrintf(cl_luaWriteBuf);
+	lua_State *L = (lua_State *)p;
+
+	if (L == cl_luaMasterData.L) {
+		CL_LuaPrintf("\n");
+	}
+	else {
+		/* communicate */
+	}
 }

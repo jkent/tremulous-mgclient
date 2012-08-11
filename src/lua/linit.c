@@ -23,6 +23,7 @@
 
 #ifndef LUA_STANDALONE
 #	include "ltremlib.h"
+#   include "lqueuelib.h"
 #endif
 
 /*
@@ -41,6 +42,7 @@ static const luaL_Reg loadedlibs[] = {
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_DBLIBNAME, luaopen_debug},
 #ifndef LUA_STANDALONE
+  {LUA_QUEUELIBNAME, luaopen_queue},
   {LUA_TREMLIBNAME, luaopen_trem},
 #endif
   {NULL, NULL}

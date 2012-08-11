@@ -7,4 +7,3 @@
 LUALIB_API int (luaopen_trem) (lua_State *L);
 
 #endif /* _ltremlib_h */
-

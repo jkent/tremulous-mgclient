@@ -1510,9 +1510,12 @@ ifeq ($(USE_LUA),1)
     $(B)/client/ltablib.o \
     $(B)/client/loadlib.o \
     $(B)/client/ltremlib.o \
+    $(B)/client/lqueuelib.o \
     $(B)/client/cl_lua.o \
-    $(B)/client/cl_lua_main_init.o \
-    $(B)/client/cl_lua_print.o
+    $(B)/client/cl_lua_master_init.o \
+    $(B)/client/cl_lua_print.o \
+    $(B)/client/cl_lua_slave.o \
+    $(B)/client/cl_lua_slave_init.o
 
 $(B)/client/%.c: $(CDIR)/lua/%.lua $(LUA_BIN2C)
 	$(DO_LUA_BIN2C)

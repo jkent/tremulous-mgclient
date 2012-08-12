@@ -191,9 +191,6 @@ static int lqueue_write (lua_State *src)
 		dst_cond = slave_storage_cond;
 	}
 
-    //fprintf(stderr, "*** wr thd: %s, entered\n", src==master ? "master" : "slave");
-	//fprintf(stderr, "src top: %u, dst top: %u\n", lua_gettop(src), lua_gettop(dst));
-
 	SDL_mutexP(dst_lock);
 
 	luaL_getsubtable(dst, LUA_REGISTRYINDEX, "queue");
@@ -205,9 +202,6 @@ static int lqueue_write (lua_State *src)
 
 	SDL_mutexV(dst_lock);
 	SDL_CondSignal(dst_cond);
-
-	//fprintf(stderr, "src top: %u, dst top: %u\n", lua_gettop(src), lua_gettop(dst));
-    //fprintf(stderr, "*** wr thd: %s, done\n", src==master ? "master" : "slave");
 
 	return 0;
 }
@@ -277,8 +271,39 @@ static int lqueue_read_count (lua_State *L)
 
 	luaL_getsubtable(src, LUA_REGISTRYINDEX, "queue");
 	len = luaL_len(src, -1);
-	lua_pushinteger(L, len);
 	lua_pop(src, 1);
+	lua_pushinteger(L, len);
+
+	SDL_mutexV(src_lock);
+
+	return 1;
+}
+
+
+static int lqueue_readable (lua_State *L)
+{
+	int len;
+	lua_State *src;
+	SDL_mutex *src_lock;
+	SDL_cond *src_cond;
+
+	if (L == master) {
+		src = slave_storage;
+		src_lock = slave_storage_lock;
+		src_cond = slave_storage_cond;
+	}
+	else {
+		src = master_storage;
+		src_lock = master_storage_lock;
+		src_cond = master_storage_cond;
+	}
+
+	SDL_mutexP(src_lock);
+
+	luaL_getsubtable(src, LUA_REGISTRYINDEX, "queue");
+	len = luaL_len(src, -1);
+	lua_pop(src, 1);
+	lua_pushboolean(L, (len != 0));
 
 	SDL_mutexV(src_lock);
 
@@ -319,6 +344,7 @@ static const luaL_Reg queuelib[] = {
 	{"write", lqueue_write},
 	{"read", lqueue_read},
 	{"read_count", lqueue_read_count},
+	{"readable", lqueue_readable},
 	{NULL, NULL}
 };
 

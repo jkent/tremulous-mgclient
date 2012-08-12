@@ -2793,6 +2793,10 @@ void CL_Frame ( int msec ) {
 	CL_UpdateMumble();
 #endif
 
+#ifdef USE_LUA
+	CL_LuaFrame();
+#endif
+
 	// advance local effects for next frame
 	SCR_RunCinematic();
 
@@ -3339,9 +3343,9 @@ void CL_Init( void ) {
 
 	SCR_Init ();
 
-	#ifdef USE_LUA	
+#ifdef USE_LUA
 	CL_LuaInit();
-	#endif
+#endif
 
 //	Cbuf_Execute ();
 
@@ -3378,9 +3382,9 @@ void CL_Shutdown( void ) {
 
 	CL_Disconnect( qtrue );
 
-	#ifdef USE_LUA	
+#ifdef USE_LUA
 	CL_LuaShutdown();
-	#endif
+#endif
 
 	S_Shutdown();
 	CL_ShutdownRef();

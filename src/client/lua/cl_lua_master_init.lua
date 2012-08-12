@@ -9,6 +9,15 @@ package.cpath = home.."/lua/?."..ext..";"..home.."/lua/loadall."..ext..";"..
 
 base, home, ext = nil
 
+trem.hook.frame = function()
+	while queue.readable() do
+		t = queue.read()
+		if t.cmd == "print" then
+			print(t.str)
+		end
+	end
+end
+
 local fn = package.searchpath("autoexec", package.path)
 if fn then
 	return dofile(fn)

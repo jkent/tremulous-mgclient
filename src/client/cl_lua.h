@@ -33,7 +33,7 @@ extern qboolean cl_luaCmdExec;
 void CL_LuaInit(void);
 void CL_LuaShutdown(void);
 void CL_LuaRestart(void);
-qboolean CL_LuaLoadFile(const char *filename, int rets);
+void CL_LuaFrame( void );
 void CL_LuaConsoleHook(const char *text);
 qboolean CL_LuaCommandHook(void);
 
@@ -48,7 +48,7 @@ qboolean CL_LuaCommandHook(void);
 
 extern qboolean cl_luaPrintf;
 
-void CL_LuaWriteString( void *p, const char *s );
+void CL_LuaWriteString( void *p, const char *s, size_t l );
 void CL_LuaWriteLine( void *p );
 
 

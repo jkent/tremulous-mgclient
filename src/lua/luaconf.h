@@ -544,9 +544,9 @@
 
 #undef luai_writestring
 #undef luai_writeline
-#define luai_writestring(s, l) CL_LuaWriteString(L, s)
+#define luai_writestring(s, l) CL_LuaWriteString(L, s, l)
 #define luai_writeline() CL_LuaWriteLine(L)
-void CL_LuaWriteString( void *L, const char *s );
+void CL_LuaWriteString( void *L, const char *s, size_t l );
 void CL_LuaWriteLine( void *L );
 
 #undef LUA_PATH_DEFAULT

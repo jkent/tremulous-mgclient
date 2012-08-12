@@ -135,6 +135,37 @@ void CL_LuaRestart( void )
 	CL_LuaInit();
 }
 
+
+/*
+======================
+CL_LuaFrame
+======================
+*/
+void CL_LuaFrame( void )
+{
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	if ( !self->L ) {
+		return;
+	}
+
+	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyHook);
+	lua_gettable(self->L, LUA_REGISTRYINDEX);
+	lua_pushliteral(self->L, "frame");
+	lua_gettable(self->L, -2);
+	if ( !lua_isfunction(self->L, -1) ) {
+		lua_pop(self->L, 2);
+		return;
+	}
+	lua_remove(self->L, 1);
+
+	if ( lua_pcall(self->L, 0, 0, 0) ) {
+		CL_LuaPrintf("Lua error: %s\n",
+				lua_tostring(self->L, -1));
+		lua_pop(self->L, 1);
+	}
+}
+
 /*
 ======================
 CL_LuaConsoleHook

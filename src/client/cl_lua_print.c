@@ -1,8 +1,5 @@
 #include "cl_lua.h"
 
-qboolean cl_luaPrintf = qfalse;
-
-
 /*
 ======================
 CL_LuaWriteString
@@ -10,11 +7,14 @@ CL_LuaWriteString
 */
 void CL_LuaWriteString( void *p, const char *s, size_t l )
 {
+	struct cl_luaMasterData_t *master = &cl_luaMasterData;
 	lua_State *L = (lua_State *)p;
 	luaL_Buffer B;
 
-	if (L == cl_luaMasterData.L) {
-		CL_LuaPrintf("%s", s);
+	if (L == master->L) {
+		master->printing = qtrue;
+		Com_Printf("%s", s);
+		master->printing = qfalse;
 		return;
 	}
 
@@ -39,10 +39,13 @@ CL_LuaWriteLine
 */
 void CL_LuaWriteLine( void *p )
 {
+	struct cl_luaMasterData_t *master = &cl_luaMasterData;
 	lua_State *L = (lua_State *)p;
 
-	if (L == cl_luaMasterData.L) {
-		CL_LuaPrintf("\n");
+	if (L == master->L) {
+		master->printing = qtrue;
+		Com_Printf("\n");
+		master->printing = qfalse;
 		return;
 	}
 

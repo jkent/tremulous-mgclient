@@ -2,7 +2,6 @@
 #include "../lua/lqueuelib.h"
 
 struct cl_luaMasterData_t cl_luaMasterData = {0};
-qboolean cl_luaCmdExec = qfalse;
 
 
 /*
@@ -126,7 +125,7 @@ qboolean CL_LuaCommandHook( void )
 
 	int argc, i;
 
-	if ( cl_luaCmdExec || !self->L ) {
+	if ( self->execing || !self->L ) {
 		return qfalse;
 	}
 
@@ -167,7 +166,7 @@ void CL_LuaConsoleHook( const char *text )
 	int len;
 	char *s;
 
-	if ( cl_luaPrintf || !self->L ) {
+	if ( self->printing || !self->L ) {
 		return;
 	}
 

@@ -25,10 +25,11 @@ extern size_t cl_luaMasterInit_size;
 
 struct cl_luaMasterData_t {
 	lua_State *L;
+	qboolean printing;
+	qboolean execing;
 };
 
 extern struct cl_luaMasterData_t cl_luaMasterData;
-extern qboolean cl_luaCmdExec;
 
 void CL_LuaInit( void );
 void CL_LuaShutdown( void );
@@ -41,12 +42,10 @@ void CL_LuaFrameHook( void );
 /* cl_lua_print.c */
 
 #define CL_LuaPrintf(...) { \
-		cl_luaPrintf = qtrue; \
+		cl_luaMasterData.printing = qtrue; \
 		Com_Printf(__VA_ARGS__); \
-		cl_luaPrintf = qfalse; \
+		cl_luaMasterData.printing = qfalse; \
 }
-
-extern qboolean cl_luaPrintf;
 
 void CL_LuaWriteString( void *p, const char *s, size_t l );
 void CL_LuaWriteLine( void *p );

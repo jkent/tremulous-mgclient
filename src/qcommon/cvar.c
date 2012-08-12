@@ -85,7 +85,7 @@ static qboolean Cvar_ValidateString( const char *s ) {
 Cvar_FindVar
 ============
 */
-cvar_t *Cvar_FindVar( const char *var_name ) {
+static cvar_t *Cvar_FindVar( const char *var_name ) {
 	cvar_t	*var;
 	long hash;
 

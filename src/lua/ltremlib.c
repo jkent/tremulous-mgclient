@@ -9,31 +9,16 @@
 static int ltrem_exec( lua_State *L )
 {
 	struct cl_luaMasterData_t *master = &cl_luaMasterData;
-	luaL_Buffer B;
-	int argc = lua_gettop(L);
-	int i;
+	const char *command;
 
-	if ( master->L != L || !lua_isstring(L, -1) ) {
+	if ( !lua_isstring(L, 1) ) {
 		return 0;
 	}
 
-	luaL_buffinit(L, &B);
-	lua_pushvalue(L, 1);
-	luaL_addvalue(&B);
-
-	for ( i = 2; i <= argc; i++ ) {
-		luaL_addstring(&B, " \"");
-		if ( lua_isstring(L, i) ) {
-			lua_pushvalue(L, i);
-			luaL_addvalue(&B);
-		}
-		luaL_addchar(&B, '"');
-	}
-	luaL_addchar(&B, '\n');
-	luaL_pushresult(&B);
+	command = lua_tostring(L, 1);
 
 	master->execing = qtrue;
-	Cmd_ExecuteString(lua_tostring(L, -1));
+	Cmd_ExecuteString(command);
 	master->execing = qfalse;
 	return 0;
 }
@@ -93,6 +78,12 @@ static const luaL_Reg tremlib[] = {
 
 LUALIB_API int luaopen_trem( lua_State *L )
 {
+	struct cl_luaMasterData_t *master = &cl_luaMasterData;
+	if ( master->L != L ) {
+		lua_pushnil(L);
+		return 1;
+	}
+
 	luaL_newlib(L, tremlib);
 	return 1;
 }

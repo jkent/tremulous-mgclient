@@ -18,3 +18,19 @@ end
 print("Lua error: autoexec not found")
 print("Search path: "..package.path)
 ]]--
+
+commands = {}
+commands.test = function(command)
+	print("test success")
+end
+
+local function main()
+	while not stopped() do
+		local command = queue.read()
+		if command and commands[command.name] then
+			commands[command.name](command)
+		end
+	end
+end
+
+return main

@@ -22,6 +22,13 @@ static const luaL_Reg preloadedlibs[] = {
 	{NULL, NULL}
 };
 
+static int CL_LuaSlaveIsStopped (lua_State *L)
+{
+	struct cl_luaSlaveData_t *self = (struct cl_luaSlaveData_t *) &cl_luaSlaveData;
+	lua_pushboolean(L, self->stop == qtrue);
+	return 1;
+}
+
 static qboolean CL_LuaSlaveStartup( struct cl_luaSlaveData_t *self )
 {
 	const luaL_Reg *lib;
@@ -44,22 +51,31 @@ static qboolean CL_LuaSlaveStartup( struct cl_luaSlaveData_t *self )
 
 	if ( luaL_loadbuffer(self->L, (const char *) cl_luaSlaveInit,
 			cl_luaSlaveInit_size, "slave_init") ) {
-		CL_LuaPrintf("CL_LuaInit: loadbuffer: %s\n",
-				lua_tostring(self->L, -1));
+		lua_getglobal(self->L, "print");
+		lua_pushfstring(self->L, "CL_LuaInit: loadbuffer: %s", lua_tostring(self->L, -2));
+		lua_call(self->L, 1, 0);
 		lua_pop(self->L, 1);
-		lua_close(self->L);
-		self->L = NULL;
 		return qtrue;
 	}
 
-	if ( lua_pcall(self->L, 0, 0, 0) ) {
-		CL_LuaPrintf("Lua error: %s\n",
-				lua_tostring(self->L, -1));
+	if ( lua_pcall(self->L, 0, 1, 0) ) {
+		lua_getglobal(self->L, "print");
+		lua_pushfstring(self->L, "Lua error: %s", lua_tostring(self->L, -2));
+		lua_call(self->L, 1, 0);
 		lua_pop(self->L, 1);
-		lua_close(self->L);
-		self->L = NULL;
 		return qtrue;
 	}
+
+	if (!lua_isfunction(self->L, -1)) {
+		lua_getglobal(self->L, "print");
+		lua_pushliteral(self->L, "Lua error: init did not return main function");
+		lua_call(self->L, 1, 0);
+		lua_pop(self->L, 1);
+		return qtrue;
+	}
+
+	self->stop = qfalse;
+	lua_register(self->L, "stopped", CL_LuaSlaveIsStopped);
 
 	lua_gc(self->L, LUA_GCCOLLECT, 0);
 	return qfalse;
@@ -74,33 +90,26 @@ static void CL_LuaSlaveShutdown( struct cl_luaSlaveData_t *self )
 	}
 }
 
-
 static int CL_LuaSlave( void *arg )
 {
 	struct cl_luaSlaveData_t *self = (struct cl_luaSlaveData_t *) arg;
 
-	CL_LuaSlaveStartup(self);
+	if (CL_LuaSlaveStartup(self)) {
+		CL_LuaSlaveShutdown(self);
+		return 1;
+	}
 
-	self->stop = qfalse;
-	while ( !self->stop ) {
-		SDL_Delay(10);
-		/* fetch work unit from queue */
-
-		/*
-		if ( !workunit ) {
-			SDL_Delay(10);
-			continue;
-		}
-		*/
-
-		/* throw work unit at Lua state */
+	if ( lua_pcall(self->L, 0, 0, 0) ) {
+		lua_getglobal(self->L, "print");
+		lua_pushfstring(self->L, "Lua error: %s", lua_tostring(self->L, -2));
+		lua_call(self->L, 1, 0);
+		lua_pop(self->L, 1);
 	}
 
 	CL_LuaSlaveShutdown(self);
 
 	return 0;
 }
-
 
 qboolean CL_LuaSlaveStart( void )
 {

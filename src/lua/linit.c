@@ -42,6 +42,7 @@ static const luaL_Reg loadedlibs[] = {
   {LUA_MATHLIBNAME, luaopen_math},
   {LUA_DBLIBNAME, luaopen_debug},
 #ifndef LUA_STANDALONE
+  // TODO: move this into master
   {LUA_QUEUELIBNAME, luaopen_queue},
   {LUA_TREMLIBNAME, luaopen_trem},
 #endif

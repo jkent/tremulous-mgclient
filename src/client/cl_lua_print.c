@@ -20,7 +20,7 @@ void CL_LuaWriteString( void *p, const char *s, size_t l )
 
 	lua_getfield(L, LUA_REGISTRYINDEX, "print");
 	if (lua_isnil(L, -1)) {
-		lua_pop(L, -1);
+		lua_pop(L, 1);
 		lua_pushlstring(L, s, l);
 	}
 	else if (lua_isstring(L, -1)) {
@@ -68,6 +68,10 @@ void CL_LuaWriteLine( void *p )
 	if (lua_isnil(L, -1)) {
 		lua_pop(L, 1);
 		lua_pushliteral(L, "");
+	}
+	else {
+		lua_pushnil(L);
+		lua_setfield(L, LUA_REGISTRYINDEX, "print");
 	}
 	lua_setfield(L, -2, "text");
 	lua_call(L, 1, 0);

@@ -229,7 +229,12 @@ static int lqueue_read (lua_State *dst)
 
 	luaL_getsubtable(src, LUA_REGISTRYINDEX, "queue");
 	while ((len = luaL_len(src, -1)) == 0) {
-		SDL_CondWait(src_cond, src_lock);
+		if (SDL_MUTEX_TIMEDOUT == SDL_CondWaitTimeout(src_cond, src_lock, 10)) {
+			lua_pop(src, 1);
+			SDL_mutexV(src_lock);
+			lua_pushnil(dst);
+			return 1;
+		}
 	}
 
 	lua_rawgeti(src, -1, 1);
@@ -366,7 +371,8 @@ LUALIB_API int luaopen_queue (lua_State *L)
 			!slave_storage  || !slave_storage_lock  || !slave_storage_cond) {
 			lqueue_cleanup();
 			/* TODO: convey this as an error message somehow */
-			return 0;
+			lua_pushnil(L);
+			return 1;
 		}
 	}
 

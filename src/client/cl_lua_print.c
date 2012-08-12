@@ -60,13 +60,13 @@ void CL_LuaWriteLine( void *p )
 
 	lua_createtable(L, 0, 2);
 	lua_pushliteral(L, "print");
-	lua_setfield(L, -2, "cmd");
+	lua_setfield(L, -2, "name");
 	lua_getfield(L, LUA_REGISTRYINDEX, "print");
 	if (lua_isnil(L, -1)) {
 		lua_pop(L, 1);
 		lua_pushliteral(L, "");
 	}
-	lua_setfield(L, -2, "str");
+	lua_setfield(L, -2, "text");
 	lua_call(L, 1, 0);
 	lua_pop(L, 1);
 }

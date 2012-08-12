@@ -2794,7 +2794,7 @@ void CL_Frame ( int msec ) {
 #endif
 
 #ifdef USE_LUA
-	CL_LuaFrame();
+	CL_LuaFrameHook();
 #endif
 
 	// advance local effects for next frame

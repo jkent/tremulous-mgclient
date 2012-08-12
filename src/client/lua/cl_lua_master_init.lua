@@ -1,27 +1,30 @@
-local base = trem.cvar_get("fs_basepath").string
-local home = trem.cvar_get("fs_homepath").string
-local ext = string.match(package.cpath, "%.(%a+)$")
+local commands = {}
 
-package.path = home.."/lua/?.lua;"..home.."/lua/?/init.lua;"..
-	base.."/lua/?.lua;"..base.."/lua/?/init.lua"
-package.cpath = home.."/lua/?."..ext..";"..home.."/lua/loadall."..ext..";"..
-	base.."/lua/?."..ext..";"..base.."/lua/loadall."..ext
+commands.print = function(command)
+	print(command.text)
+end
 
-base, home, ext = nil
+commands.get_cvar = function(command)
+	command.value = trem.get_cvar(command.key)
+	queue.write(command)
+end
 
-trem.hook.frame = function()
+commands.set_cvar = function(command)
+	local result = trem.set_cvar(command.key, command.value)
+	queue.write(command)
+end
+
+function command_hook(args, raw)
+end
+
+function console_hook(text)
+end
+
+function frame_hook()
 	while queue.readable() do
-		t = queue.read()
-		if t.cmd == "print" then
-			print(t.str)
+		local command = queue.read()
+		if commands[command.name] then
+			commands[command.name](command)
 		end
 	end
 end
-
-local fn = package.searchpath("autoexec", package.path)
-if fn then
-	return dofile(fn)
-end
-
-print("CL_LuaInit: autoexec not found")
-print("CL_LuaInit: path: "..package.path)

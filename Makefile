@@ -1195,7 +1195,7 @@ endef
 
 define DO_LUA_BIN2C
 $(echo_cmd) "LUA_BIN2C $<"
-$(Q)$(LUA_BIN2C) $< > $@
+$(Q)$(LUA_BIN2C) $< > $@ || (rm $@ && false)
 endef
 
 LUABASEOBJ = \

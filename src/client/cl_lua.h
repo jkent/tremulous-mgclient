@@ -30,12 +30,12 @@ struct cl_luaMasterData_t {
 extern struct cl_luaMasterData_t cl_luaMasterData;
 extern qboolean cl_luaCmdExec;
 
-void CL_LuaInit(void);
-void CL_LuaShutdown(void);
-void CL_LuaRestart(void);
-void CL_LuaFrame( void );
-void CL_LuaConsoleHook(const char *text);
-qboolean CL_LuaCommandHook(void);
+void CL_LuaInit( void );
+void CL_LuaShutdown( void );
+void CL_LuaRestart( void );
+qboolean CL_LuaCommandHook( void );
+void CL_LuaConsoleHook( const char *text );
+void CL_LuaFrameHook( void );
 
 
 /* cl_lua_print.c */

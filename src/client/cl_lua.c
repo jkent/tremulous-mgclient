@@ -4,9 +4,6 @@
 struct cl_luaMasterData_t cl_luaMasterData = {0};
 qboolean cl_luaCmdExec = qfalse;
 
-static const char cl_luaRegkeyHook = 0;
-static const char cl_luaRegkeyCmd = 0;
-
 
 /*
 ======================
@@ -22,6 +19,7 @@ void CL_Lua_f( void )
 		return;
 	}
 	else if ( !Q_stricmp(Cmd_Argv(1), "eval") ) {
+		// TODO: rework so it runs within slave
 		if ( luaL_loadstring(self->L, Cmd_Cmd() + 9) ) {
 			CL_LuaPrintf("eval: loadstring: %s\n",
 					lua_tostring(self->L, -1));
@@ -63,26 +61,9 @@ void CL_LuaInit( void )
 	luaL_openlibs(self->L);
 
 	if ( CL_LuaSlaveStart() ) {
-		lua_close(self->L);
-		self->L = NULL;
+		CL_LuaShutdown();
 		return;
 	}
-
-	lua_getglobal(self->L, "trem");
-	lua_newtable(self->L);
-	lua_newtable(self->L);
-
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyHook);
-	lua_pushvalue(self->L, 3);
-	lua_settable(self->L, LUA_REGISTRYINDEX);
-
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyCmd);
-	lua_pushvalue(self->L, 2);
-	lua_settable(self->L, LUA_REGISTRYINDEX);
-
-	lua_setfield(self->L, 1, "hook");
-	lua_setfield(self->L, 1, "cmd");
-	lua_pop(self->L, 1);
 
 	Cmd_AddCommand("lua", CL_Lua_f);
 
@@ -116,9 +97,8 @@ void CL_LuaShutdown( void )
 
 	Cmd_RemoveCommand("lua");
 
-	luaclose_queue(self->L);
-
 	if ( self->L ) {
+		luaclose_queue(self->L);
 		lua_close(self->L);
 		self->L = NULL;
 	}
@@ -135,35 +115,43 @@ void CL_LuaRestart( void )
 	CL_LuaInit();
 }
 
-
 /*
 ======================
-CL_LuaFrame
+CL_LuaCommandHook
 ======================
 */
-void CL_LuaFrame( void )
+qboolean CL_LuaCommandHook( void )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
-	if ( !self->L ) {
-		return;
+	int argc, i;
+
+	if ( cl_luaCmdExec || !self->L ) {
+		return qfalse;
 	}
 
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyHook);
-	lua_gettable(self->L, LUA_REGISTRYINDEX);
-	lua_pushliteral(self->L, "frame");
-	lua_gettable(self->L, -2);
-	if ( !lua_isfunction(self->L, -1) ) {
-		lua_pop(self->L, 2);
-		return;
+	lua_getglobal(self->L, "command_hook");
+	if (!lua_isfunction(self->L, -1)) {
+		lua_pop(self->L, 1);
+		return qfalse;
 	}
-	lua_remove(self->L, 1);
 
-	if ( lua_pcall(self->L, 0, 0, 0) ) {
+	argc = Cmd_Argc();
+	lua_createtable(self->L, argc, 0);
+	for ( i = 0; i < argc; i++ ) {
+		lua_pushstring(self->L, Cmd_Argv(i));
+		lua_rawseti(self->L, -2, i + 1);
+	}
+	lua_pushstring(self->L, Cmd_Cmd());
+
+	if ( lua_pcall(self->L, 2, 1, 0) ) {
 		CL_LuaPrintf("Lua error: %s\n",
 				lua_tostring(self->L, -1));
 		lua_pop(self->L, 1);
+		return qfalse;
 	}
+
+	return lua_toboolean(self->L, -1) ? qtrue : qfalse;
 }
 
 /*
@@ -183,15 +171,11 @@ void CL_LuaConsoleHook( const char *text )
 		return;
 	}
 
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyHook);
-	lua_gettable(self->L, LUA_REGISTRYINDEX);
-	lua_pushliteral(self->L, "console");
-	lua_gettable(self->L, -2);
+	lua_getglobal(self->L, "console_hook");
 	if ( !lua_isfunction(self->L, -1) ) {
-		lua_pop(self->L, 2);
+		lua_pop(self->L, 1);
 		return;
 	}
-	lua_remove(self->L, 1);
 
 	len = strlen(text);
 	if ( text[len - 1] == '\n' ) {
@@ -210,66 +194,26 @@ void CL_LuaConsoleHook( const char *text )
 
 /*
 ======================
-CL_LuaCommandHook
+CL_LuaFrameHook
 ======================
 */
-static int CL_LuaCommandHookCall( void ) /* -2 +0 */
+void CL_LuaFrameHook( void )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
-	int argc, i;
+	if ( !self->L ) {
+		return;
+	}
 
+	lua_getglobal(self->L, "frame_hook");
 	if ( !lua_isfunction(self->L, -1) ) {
-		lua_pop(self->L, 2);
-		return -1;
+		lua_pop(self->L, 1);
+		return;
 	}
 
-	argc = Cmd_Argc();
-	lua_createtable(self->L, argc, 0);
-	for ( i = 0; i < argc; i++ ) {
-		lua_pushstring(self->L, Cmd_Argv(i));
-		lua_rawseti(self->L, -2, i + 1);
-	}
-	lua_pushstring(self->L, Cmd_Cmd());
-
-	if ( lua_pcall(self->L, 2, 1, 0) ) {
+	if ( lua_pcall(self->L, 0, 0, 0) ) {
 		CL_LuaPrintf("Lua error: %s\n",
 				lua_tostring(self->L, -1));
-		lua_pop(self->L, 2);
-		return -2;
+		lua_pop(self->L, 1);
 	}
-
-	return lua_toboolean(self->L, -1) ? 1 : 0;
-}
-
-qboolean CL_LuaCommandHook( void )
-{
-	struct cl_luaMasterData_t *self = &cl_luaMasterData;
-
-	int n;
-
-	if ( cl_luaCmdExec || !self->L ) {
-		return qfalse;
-	}
-
-	/* trem.hook.command */
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyHook);
-	lua_gettable(self->L, LUA_REGISTRYINDEX);
-	lua_pushliteral(self->L, "command");
-	lua_gettable(self->L, -2);
-	n = CL_LuaCommandHookCall();
-	if ( n == 1 ) {
-		return qtrue;
-	}
-
-	/* trem.cmd[<arg0>] */
-	lua_pushlightuserdata(self->L, (void *) &cl_luaRegkeyCmd);
-	lua_gettable(self->L, LUA_REGISTRYINDEX);
-	lua_pushstring(self->L, Cmd_Argv(0));
-	lua_gettable(self->L, -2);
-	n = CL_LuaCommandHookCall();
-	if ( n == 0 ) {
-		return qtrue;
-	}
-	return qfalse;
 }

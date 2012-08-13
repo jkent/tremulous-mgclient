@@ -1496,7 +1496,6 @@ ifeq ($(USE_LUA),1)
     $(B)/client/lundump.o \
     $(B)/client/lvm.o \
     $(B)/client/lzio.o \
-    $(B)/client/linit.o \
     \
     $(B)/client/lauxlib.o \
     $(B)/client/lbaselib.o \
@@ -1509,7 +1508,7 @@ ifeq ($(USE_LUA),1)
     $(B)/client/lstrlib.o \
     $(B)/client/ltablib.o \
     $(B)/client/loadlib.o \
-    $(B)/client/ltremlib.o \
+    $(B)/client/ltremulouslib.o \
     $(B)/client/lqueuelib.o \
     $(B)/client/cl_lua.o \
     $(B)/client/cl_lua_master_init.o \

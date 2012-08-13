@@ -63,7 +63,7 @@ void CL_LuaWriteLine( void *p )
 
 	lua_createtable(L, 0, 2);
 	lua_pushliteral(L, "print");
-	lua_setfield(L, -2, "name");
+	lua_setfield(L, -2, "type");
 	lua_getfield(L, LUA_REGISTRYINDEX, "print");
 	if (lua_isnil(L, -1)) {
 		lua_pop(L, 1);

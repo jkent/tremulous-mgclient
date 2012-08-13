@@ -370,7 +370,6 @@ LUALIB_API int luaopen_queue (lua_State *L)
 		if (!master_storage || !master_storage_lock || !master_storage_cond ||
 			!slave_storage  || !slave_storage_lock  || !slave_storage_cond) {
 			lqueue_cleanup();
-			/* TODO: convey this as an error message somehow */
 			lua_pushnil(L);
 			return 1;
 		}

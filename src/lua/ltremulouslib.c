@@ -1,12 +1,10 @@
-/* vim: set et ts=2: */
-
-#include "ltremlib.h"
+#include "ltremulouslib.h"
 #include "lauxlib.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
 #include "../client/cl_lua.h"
 
-static int ltrem_exec( lua_State *L )
+static int ltremulous_execute( lua_State *L )
 {
 	struct cl_luaMasterData_t *master = &cl_luaMasterData;
 	const char *command;
@@ -23,7 +21,7 @@ static int ltrem_exec( lua_State *L )
 	return 0;
 }
 
-static int ltrem_get_cvar( lua_State *L )
+static int ltremulous_get_cvar( lua_State *L )
 {
 	const char *name, *value;
 
@@ -45,7 +43,7 @@ static int ltrem_get_cvar( lua_State *L )
 }
 
 cvar_t *Cvar_Set2( const char *var_name, const char *value, qboolean force );
-static int ltrem_set_cvar( lua_State *L )
+static int ltremulous_set_cvar( lua_State *L )
 {
 	const char *name, *value;
 
@@ -69,14 +67,14 @@ static int ltrem_set_cvar( lua_State *L )
 	return 0;
 }
 
-static const luaL_Reg tremlib[] = {
-	{"exec", ltrem_exec},
-	{"get_cvar", ltrem_get_cvar},
-	{"set_cvar", ltrem_set_cvar},
+static const luaL_Reg tremulouslib[] = {
+	{"execute", ltremulous_execute},
+	{"get_cvar", ltremulous_get_cvar},
+	{"set_cvar", ltremulous_set_cvar},
 	{NULL, NULL}
 };
 
-LUALIB_API int luaopen_trem( lua_State *L )
+LUALIB_API int luaopen_tremulous( lua_State *L )
 {
 	struct cl_luaMasterData_t *master = &cl_luaMasterData;
 	if ( master->L != L ) {
@@ -84,6 +82,6 @@ LUALIB_API int luaopen_trem( lua_State *L )
 		return 1;
 	}
 
-	luaL_newlib(L, tremlib);
+	luaL_newlib(L, tremulouslib);
 	return 1;
 }

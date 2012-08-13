@@ -3383,7 +3383,7 @@ void CL_Shutdown( void ) {
 	CL_Disconnect( qtrue );
 
 #ifdef USE_LUA
-	CL_LuaShutdown();
+	CL_LuaShutdown( qtrue );
 #endif
 
 	S_Shutdown();

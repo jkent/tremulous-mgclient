@@ -1,7 +1,15 @@
 #include "cl_lua.h"
 #include "../lua/lqueuelib.h"
+#include "../lua/ltremulouslib.h"
 
 struct cl_luaMasterData_t cl_luaMasterData = {0};
+
+static const luaL_Reg loadedlibs[] = {
+	{"_G", luaopen_base},
+	{LUA_QUEUELIBNAME, luaopen_queue},
+	{LUA_TREMULOUSLIBNAME, luaopen_tremulous},
+	{NULL, NULL}
+};
 
 
 /*
@@ -11,31 +19,22 @@ CL_Lua_f
 */
 void CL_Lua_f( void )
 {
-	struct cl_luaMasterData_t *self = &cl_luaMasterData;
-
-	if ( Cmd_Argc() == 2 && !Q_stricmp(Cmd_Argv(1), "restart") ) {
-		CL_LuaRestart();
-		return;
-	}
-	else if ( !Q_stricmp(Cmd_Argv(1), "eval") ) {
-		// TODO: rework so it runs within slave
-		if ( luaL_loadstring(self->L, Cmd_Cmd() + 9) ) {
-			CL_LuaPrintf("eval: loadstring: %s\n",
-					lua_tostring(self->L, -1));
-			lua_pop(self->L, 1);
+	if ( Cmd_Argc() == 2 ) {
+		if ( !Q_stricmp(Cmd_Argv(1), "start") ) {
+			CL_LuaInit();
 			return;
 		}
-
-		if ( lua_pcall(self->L, 0, 0, 0) ) {
-			CL_LuaPrintf("eval: pcall: %s\n",
-					lua_tostring(self->L, -1));
-			lua_pop(self->L, 1);
+		else if ( !Q_stricmp(Cmd_Argv(1), "stop") ) {
+			CL_LuaShutdown( qfalse );
 			return;
 		}
-		return;
+		else if ( !Q_stricmp(Cmd_Argv(1), "restart") ) {
+			CL_LuaRestart();
+			return;
+		}
 	}
 
-	CL_LuaPrintf("lua [ restart | eval code ]\n");
+	CL_LuaPrintf("lua [start|stop|restart]\n");
 }
 
 /*
@@ -46,25 +45,30 @@ CL_LuaInit
 void CL_LuaInit( void )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+	const luaL_Reg *lib;
 
 	if (self->L) {
 		Com_Printf("CL_LuaInit: already initialized\n");
 		return;
 	}
 
+	Cmd_RemoveCommand("lua");
+	Cmd_AddCommand("lua", CL_Lua_f);
+
 	self->L = luaL_newstate();
 	if ( !self->L ) {
 		Com_Printf("CL_LuaInit: failed\n");
 	}
 
-	luaL_openlibs(self->L);
-
-	if ( CL_LuaSlaveStart() ) {
-		CL_LuaShutdown();
-		return;
+	for (lib = loadedlibs; lib->func; lib++) {
+		luaL_requiref(self->L, lib->name, lib->func, 1);
+		lua_pop(self->L, 1);
 	}
 
-	Cmd_AddCommand("lua", CL_Lua_f);
+	if ( CL_LuaSlaveStart() ) {
+		CL_LuaShutdown( qfalse );
+		return;
+	}
 
 	if ( luaL_loadbuffer(self->L, (const char *) cl_luaMasterInit,
 			cl_luaMasterInit_size, "master_init") ) {
@@ -88,13 +92,15 @@ void CL_LuaInit( void )
 CL_LuaShutdown
 ======================
 */
-void CL_LuaShutdown( void )
+void CL_LuaShutdown( qboolean full )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
 	CL_LuaSlaveStop();
 
-	Cmd_RemoveCommand("lua");
+	if ( full ) {
+		Cmd_RemoveCommand("lua");
+	}
 
 	if ( self->L ) {
 		luaclose_queue(self->L);
@@ -110,7 +116,7 @@ CL_LuaRestart
 */
 void CL_LuaRestart( void )
 {
-	CL_LuaShutdown();
+	CL_LuaShutdown( qfalse );
 	CL_LuaInit();
 }
 

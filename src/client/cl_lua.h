@@ -32,7 +32,7 @@ struct cl_luaMasterData_t {
 extern struct cl_luaMasterData_t cl_luaMasterData;
 
 void CL_LuaInit( void );
-void CL_LuaShutdown( void );
+void CL_LuaShutdown( qboolean full );
 void CL_LuaRestart( void );
 qboolean CL_LuaCommandHook( void );
 void CL_LuaConsoleHook( const char *text );

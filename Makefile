@@ -101,6 +101,10 @@ ifndef USE_LUA
 USE_LUA=1
 endif
 
+ifndef USE_LUASOCKET
+USE_LUASOCKET=1
+endif
+
 ifndef USE_OPENAL
 USE_OPENAL=1
 endif
@@ -987,6 +991,8 @@ makedirs:
 	@if [ ! -d $(B)/client ];then $(MKDIR) $(B)/client;fi
 	@if [ ! -d $(B)/clientsmp ];then $(MKDIR) $(B)/clientsmp;fi
 	@if [ ! -d $(B)/ded ];then $(MKDIR) $(B)/ded;fi
+	@if [ ! -d $(B)/lua ];then $(MKDIR) $(B)/lua;fi
+	@if [ ! -d $(B)/lua/socket ];then $(MKDIR) $(B)/lua/socket;fi
 	@if [ ! -d $(B)/base ];then $(MKDIR) $(B)/base;fi
 	@if [ ! -d $(B)/base/cgame ];then $(MKDIR) $(B)/base/cgame;fi
 	@if [ ! -d $(B)/base/game ];then $(MKDIR) $(B)/base/game;fi
@@ -1185,17 +1191,17 @@ ifeq ($(GENERATE_DEPENDENCIES),1)
   LUA_CFLAGS += -MMD -MF $(@:.o=.d)
 endif
 
-LUA         = $(B)/tools/lua/lua$(BINEXT)
-LUA_BIN2C   = $(LUA) $(CDIR)/lua/bin2c.lua
+LUA   = $(B)/tools/lua/lua$(BINEXT)
+LUA2C = $(LUA) $(LUADIR)/lua2c.lua
 
 define DO_LUA_CC
 $(echo_cmd) "LUA_CC $<"
 $(Q)$(CC) $(LUA_CFLAGS) -o $@ -c $<
 endef
 
-define DO_LUA_BIN2C
-$(echo_cmd) "LUA_BIN2C $<"
-$(Q)$(LUA_BIN2C) $< > $@ || (rm $@ && false)
+define DO_LUA2C
+$(echo_cmd) "LUA2C $<"
+$(Q)$(LUA2C) $< > $@ || (rm $@ && false)
 endef
 
 LUABASEOBJ = \
@@ -1476,52 +1482,114 @@ Q3POBJ_SMP += \
 ifeq ($(USE_LUA),1)
   BASE_CFLAGS += -DUSE_LUA
   Q3OBJ += \
-    $(B)/client/lapi.o \
-    $(B)/client/lcode.o \
-    $(B)/client/lctype.o \
-    $(B)/client/ldebug.o \
-    $(B)/client/ldo.o \
-    $(B)/client/ldump.o \
-    $(B)/client/lfunc.o \
-    $(B)/client/lgc.o \
-    $(B)/client/llex.o \
-    $(B)/client/lmem.o \
-    $(B)/client/lobject.o \
-    $(B)/client/lopcodes.o \
-    $(B)/client/lparser.o \
-    $(B)/client/lstate.o \
-    $(B)/client/lstring.o \
-    $(B)/client/ltable.o \
-    $(B)/client/ltm.o \
-    $(B)/client/lundump.o \
-    $(B)/client/lvm.o \
-    $(B)/client/lzio.o \
+    $(B)/lua/lapi.o \
+    $(B)/lua/lcode.o \
+    $(B)/lua/lctype.o \
+    $(B)/lua/ldebug.o \
+    $(B)/lua/ldo.o \
+    $(B)/lua/ldump.o \
+    $(B)/lua/lfunc.o \
+    $(B)/lua/lgc.o \
+    $(B)/lua/llex.o \
+    $(B)/lua/lmem.o \
+    $(B)/lua/lobject.o \
+    $(B)/lua/lopcodes.o \
+    $(B)/lua/lparser.o \
+    $(B)/lua/lstate.o \
+    $(B)/lua/lstring.o \
+    $(B)/lua/ltable.o \
+    $(B)/lua/ltm.o \
+    $(B)/lua/lundump.o \
+    $(B)/lua/lvm.o \
+    $(B)/lua/lzio.o \
     \
-    $(B)/client/lauxlib.o \
-    $(B)/client/lbaselib.o \
-    $(B)/client/lbitlib.o \
-    $(B)/client/lcorolib.o \
-    $(B)/client/ldblib.o \
-    $(B)/client/liolib.o \
-    $(B)/client/lmathlib.o \
-    $(B)/client/loslib.o \
-    $(B)/client/lstrlib.o \
-    $(B)/client/ltablib.o \
-    $(B)/client/loadlib.o \
-    $(B)/client/ltremulouslib.o \
-    $(B)/client/lqueuelib.o \
+    $(B)/lua/lauxlib.o \
+    $(B)/lua/lbaselib.o \
+    $(B)/lua/lbitlib.o \
+    $(B)/lua/lcorolib.o \
+    $(B)/lua/ldblib.o \
+    $(B)/lua/liolib.o \
+    $(B)/lua/lmathlib.o \
+    $(B)/lua/loslib.o \
+    $(B)/lua/lstrlib.o \
+    $(B)/lua/ltablib.o \
+    $(B)/lua/loadlib.o \
+    $(B)/lua/ltremulouslib.o \
+    $(B)/lua/lqueuelib.o \
     $(B)/client/cl_lua.o \
     $(B)/client/cl_lua_master_init.o \
     $(B)/client/cl_lua_print.o \
     $(B)/client/cl_lua_slave.o \
     $(B)/client/cl_lua_slave_init.o
 
-$(B)/client/%.c: $(CDIR)/lua/%.lua $(LUA_BIN2C)
-	$(DO_LUA_BIN2C)
+$(B)/client/%.c: $(CDIR)/lua/%.lua $(LUA2C)
+	$(DO_LUA2C)
 
 $(B)/client/%.o: $(B)/client/%.c
 	$(DO_CC)
 endif
+
+ifeq ($(USE_LUASOCKET),1)
+  BASE_CFLAGS += -DUSE_LUASOCKET -DLUA_COMPAT_MODULE
+  Q3OBJ += \
+    $(B)/lua/socket/luasocket.o \
+    $(B)/lua/socket/timeout.o \
+    $(B)/lua/socket/buffer.o \
+    $(B)/lua/socket/io.o \
+    $(B)/lua/socket/auxiliar.o \
+    $(B)/lua/socket/options.o \
+    $(B)/lua/socket/inet.o \
+    $(B)/lua/socket/except.o \
+    $(B)/lua/socket/select.o \
+    $(B)/lua/socket/tcp.o \
+    $(B)/lua/socket/udp.o \
+    $(B)/lua/socket/lua_typeerror.o \
+    $(B)/lua/socket/mime.o
+    
+ifneq (,$(filter $(PLATFORM),linux darwin))
+  Q3OBJ += \
+  	$(B)/lua/socket/unix.o \
+  	$(B)/lua/socket/usocket.o
+else
+ifeq ($(PLATFORM),mingw32)
+  Q3OBJ += \
+  	$(B)/lua/socket/wsocket.o
+endif # mingw32
+endif # darwin linux
+
+endif
+
+ifeq ($(USE_LUASQLITE),1)
+  BASE_CFLAGS += -DUSE_LUASOCKET -DLUA_COMPAT_MODULE
+  Q3OBJ += \
+  	$(B)/lua/sqlite/
+    $(B)/lua/socket/luasocket.o \
+    $(B)/lua/socket/timeout.o \
+    $(B)/lua/socket/buffer.o \
+    $(B)/lua/socket/io.o \
+    $(B)/lua/socket/auxiliar.o \
+    $(B)/lua/socket/options.o \
+    $(B)/lua/socket/inet.o \
+    $(B)/lua/socket/except.o \
+    $(B)/lua/socket/select.o \
+    $(B)/lua/socket/tcp.o \
+    $(B)/lua/socket/udp.o \
+    $(B)/lua/socket/lua_typeerror.o \
+    $(B)/lua/socket/mime.o
+    
+ifneq (,$(filter $(PLATFORM),linux darwin))
+  Q3OBJ += \
+  	$(B)/lua/socket/unix.o \
+  	$(B)/lua/socket/usocket.o
+else
+ifeq ($(PLATFORM),mingw32)
+  Q3OBJ += \
+  	$(B)/lua/socket/wsocket.o
+endif # mingw32
+endif # darwin linux
+
+endif
+
 
 $(B)/tremulous.$(ARCH)$(BINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"
@@ -1789,7 +1857,7 @@ $(B)/client/%.o: $(SYSDIR)/%.c
 $(B)/client/%.o: $(SYSDIR)/%.rc
 	$(DO_WINDRES)
 
-$(B)/client/%.o: $(LUADIR)/%.c
+$(B)/lua/%.o: $(LUADIR)/%.c
 	$(DO_CC)
 
 

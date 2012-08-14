@@ -1,6 +1,14 @@
 #include "cl_lua.h"
 #include "../lua/lqueuelib.h"
 
+#ifdef USE_LUASOCKET
+#include "../lua/socket/luasocket.h"
+#include "../lua/socket/mime.h"
+#if defined(LUA_USE_POSIX) || defined(LUA_USE_LINUX)
+#include "../lua/socket/unix.h"
+#endif
+#endif
+
 static struct cl_luaSlaveData_t cl_luaSlaveData = {0};
 
 static const luaL_Reg loadedlibs[] = {
@@ -19,6 +27,13 @@ static const luaL_Reg preloadedlibs[] = {
 	{LUA_BITLIBNAME, luaopen_bit32},
 	{LUA_MATHLIBNAME, luaopen_math},
 	{LUA_DBLIBNAME, luaopen_debug},
+#ifdef USE_LUASOCKET
+	{"socket.core", luaopen_socket_core},
+	{"mime.core",  luaopen_mime_core},
+#if defined(LUA_USE_POSIX) || defined(LUA_USE_LINUX)
+	{"socket.unix", luaopen_socket_unix},
+#endif
+#endif
 	{NULL, NULL}
 };
 

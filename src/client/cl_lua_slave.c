@@ -9,6 +9,10 @@
 #endif
 #endif
 
+#ifdef USE_LUASQLITE
+#include "../lua/sqlite/lsqlite3.h"
+#endif
+
 static struct cl_luaSlaveData_t cl_luaSlaveData = {0};
 
 static const luaL_Reg loadedlibs[] = {
@@ -33,6 +37,9 @@ static const luaL_Reg preloadedlibs[] = {
 #if defined(LUA_USE_POSIX) || defined(LUA_USE_LINUX)
 	{"socket.unix", luaopen_socket_unix},
 #endif
+#endif
+#ifdef USE_LUASQLITE
+	{"sqlite3", luaopen_lsqlite3},
 #endif
 	{NULL, NULL}
 };

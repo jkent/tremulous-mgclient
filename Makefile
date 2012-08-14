@@ -105,6 +105,10 @@ ifndef USE_LUASOCKET
 USE_LUASOCKET=1
 endif
 
+ifndef USE_LUASQLITE
+USE_LUASQLITE=1
+endif
+
 ifndef USE_OPENAL
 USE_OPENAL=1
 endif
@@ -993,6 +997,7 @@ makedirs:
 	@if [ ! -d $(B)/ded ];then $(MKDIR) $(B)/ded;fi
 	@if [ ! -d $(B)/lua ];then $(MKDIR) $(B)/lua;fi
 	@if [ ! -d $(B)/lua/socket ];then $(MKDIR) $(B)/lua/socket;fi
+	@if [ ! -d $(B)/lua/sqlite ];then $(MKDIR) $(B)/lua/sqlite;fi
 	@if [ ! -d $(B)/base ];then $(MKDIR) $(B)/base;fi
 	@if [ ! -d $(B)/base/cgame ];then $(MKDIR) $(B)/base/cgame;fi
 	@if [ ! -d $(B)/base/game ];then $(MKDIR) $(B)/base/game;fi
@@ -1527,7 +1532,6 @@ $(B)/client/%.c: $(CDIR)/lua/%.lua $(LUA2C)
 
 $(B)/client/%.o: $(B)/client/%.c
 	$(DO_CC)
-endif
 
 ifeq ($(USE_LUASOCKET),1)
   BASE_CFLAGS += -DUSE_LUASOCKET -DLUA_COMPAT_MODULE
@@ -1556,40 +1560,16 @@ ifeq ($(PLATFORM),mingw32)
   	$(B)/lua/socket/wsocket.o
 endif # mingw32
 endif # darwin linux
-
-endif
+endif # USE_LUASOCKET
 
 ifeq ($(USE_LUASQLITE),1)
-  BASE_CFLAGS += -DUSE_LUASOCKET -DLUA_COMPAT_MODULE
+  BASE_CFLAGS += -DUSE_LUASQLITE
   Q3OBJ += \
-  	$(B)/lua/sqlite/
-    $(B)/lua/socket/luasocket.o \
-    $(B)/lua/socket/timeout.o \
-    $(B)/lua/socket/buffer.o \
-    $(B)/lua/socket/io.o \
-    $(B)/lua/socket/auxiliar.o \
-    $(B)/lua/socket/options.o \
-    $(B)/lua/socket/inet.o \
-    $(B)/lua/socket/except.o \
-    $(B)/lua/socket/select.o \
-    $(B)/lua/socket/tcp.o \
-    $(B)/lua/socket/udp.o \
-    $(B)/lua/socket/lua_typeerror.o \
-    $(B)/lua/socket/mime.o
-    
-ifneq (,$(filter $(PLATFORM),linux darwin))
-  Q3OBJ += \
-  	$(B)/lua/socket/unix.o \
-  	$(B)/lua/socket/usocket.o
-else
-ifeq ($(PLATFORM),mingw32)
-  Q3OBJ += \
-  	$(B)/lua/socket/wsocket.o
-endif # mingw32
-endif # darwin linux
+  	$(B)/lua/sqlite/sqlite3.o \
+  	$(B)/lua/sqlite/lsqlite3.o
+endif # USE_LUASQLITE
 
-endif
-
+endif # USE_LUA
 
 $(B)/tremulous.$(ARCH)$(BINEXT): $(Q3OBJ) $(Q3POBJ) $(LIBSDLMAIN)
 	$(echo_cmd) "LD $@"

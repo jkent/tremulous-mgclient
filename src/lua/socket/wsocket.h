@@ -21,4 +21,6 @@ typedef t_socket *p_socket;
 #define SO_REUSEPORT SO_REUSEADDR
 #endif
 
+const char *inet_ntop(int af, const void *src, char *dst, socklen_t cnt);
+
 #endif /* WSOCKET_H */

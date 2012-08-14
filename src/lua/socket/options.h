@@ -11,6 +11,14 @@
 #include "../lua.h"
 #include "socket.h"
 
+/* IPV6_V6ONLY is missing from pre-Windows 2008 SDK as well as MinGW
+ * (at least up to 1.0.16)
+ * Runtime support is a separate issue.
+ */
+#ifndef IPV6_V6ONLY
+#define IPV6_V6ONLY 27
+#endif
+
 /* option registry */
 typedef struct t_opt {
   const char *name;

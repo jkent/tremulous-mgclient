@@ -1567,6 +1567,10 @@ ifeq ($(USE_LUASQLITE),1)
   Q3OBJ += \
   	$(B)/lua/sqlite/sqlite3.o \
   	$(B)/lua/sqlite/lsqlite3.o
+
+$(B)/lua/sqlite/sqlite3.o: $(LUADIR)/sqlite/sqlite3.c
+	$(echo_cmd) "CC $<"
+	$(Q)$(CC) $(NOTSHLIBCFLAGS) $(filter-out -ffast-math,$(CFLAGS)) -o $@ -c $<
 endif # USE_LUASQLITE
 
 endif # USE_LUA

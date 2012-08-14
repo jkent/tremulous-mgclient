@@ -164,37 +164,40 @@ qboolean CL_LuaCommandHook( void )
 CL_LuaConsoleHook
 ======================
 */
-void CL_LuaConsoleHook( const char *text )
+qboolean CL_LuaConsoleHook( const char *text )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
-	luaL_Buffer b;
+	luaL_Buffer B;
 	int len;
 	char *s;
 
 	if ( self->printing || !self->L ) {
-		return;
+		return qfalse;
 	}
 
 	lua_getglobal(self->L, "console_hook");
 	if ( !lua_isfunction(self->L, -1) ) {
 		lua_pop(self->L, 1);
-		return;
+		return qfalse;
 	}
 
 	len = strlen(text);
 	if ( text[len - 1] == '\n' ) {
 		len -= 1;
 	}
-	s = luaL_buffinitsize(self->L, &b, len);
+	s = luaL_buffinitsize(self->L, &B, len);
 	memcpy(s, text, len);
-	luaL_pushresultsize(&b, len);
+	luaL_pushresultsize(&B, len);
 
-	if ( lua_pcall(self->L, 1, 0, 0) ) {
+	if ( lua_pcall(self->L, 1, 1, 0) ) {
 		CL_LuaPrintf("Lua error: %s\n",
 				lua_tostring(self->L, -1));
 		lua_pop(self->L, 1);
+		return qfalse;
 	}
+
+	return lua_toboolean(self->L, -1) ? qtrue : qfalse;
 }
 
 /*

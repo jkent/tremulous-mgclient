@@ -46,18 +46,23 @@ commands.unregister_command = function(message)
 	command_registry[message.arg.name] = nil
 end
 
+local retain_console = false
+commands.set_retain_console = function(message)
+	retain_console = message.arg.value
+end
+
 
 --[[
 hook functions
 ]]--
 function command_hook(arg, raw)
-	-- TODO: need to implement a command registry
 	queue.send_hook("command", {arg=arg, raw=raw})
 	return command_registry[arg[1]]
 end
 
 function console_hook(text)
 	queue.send_hook("console", {text=text})
+	return retain_console
 end
 
 function frame_hook()

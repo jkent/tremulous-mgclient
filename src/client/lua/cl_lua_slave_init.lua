@@ -49,17 +49,32 @@ tremulous.set_cvar = function(name, value)
 end
 
 do
-	local mt = {}
-	tremulous.command = setmetatable({__callback={}}, mt)
+	local command = {}
+	local mt = {__index=command}
 	mt.__newindex = function(t, key, value)
-		if value then
+		if type(value) == "function" then
 			queue.send_command("register_command", {name=key})
 		else
 			queue.send_command("unregister_command", {name=key})
+			value = nil
 		end
-		t.__callback[key] = value
+		t.__t[key] = value
 	end
-	mt.__index = tremulous.command.__callback
+	tremulous.command = setmetatable({__t=command}, mt)
+end
+
+tremulous.retain_console = false
+
+do
+	local mt = {__index=tremulous}
+	mt.__newindex = function(t, key, value)
+		if key == "retain_console" then
+			value = value and true or false
+			queue.send_command("set_retain_console", {value=value})
+		end
+		t.__t[key] = value
+	end
+	tremulous = setmetatable({__t=tremulous}, mt)
 end
 
 

@@ -35,7 +35,7 @@ void CL_LuaInit( void );
 void CL_LuaShutdown( qboolean full );
 void CL_LuaRestart( void );
 qboolean CL_LuaCommandHook( void );
-void CL_LuaConsoleHook( const char *text );
+qboolean CL_LuaConsoleHook( const char *text );
 void CL_LuaFrameHook( void );
 
 

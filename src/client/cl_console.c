@@ -398,9 +398,11 @@ void CL_ConsolePrint( char *txt ) {
 	int		color;
 	qboolean skipnotify = qfalse;		// NERVE - SMF
 
-	#ifdef USE_LUA
-	CL_LuaConsoleHook( (const char *) txt );
-	#endif
+#ifdef USE_LUA
+	if ( CL_LuaConsoleHook( (const char *) txt ) ) {
+		return;
+	}
+#endif
 
 	// TTimo - prefix for text that shows up in console but not in notify
 	// backported from RTCW

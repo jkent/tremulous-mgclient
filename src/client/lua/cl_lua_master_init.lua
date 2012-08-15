@@ -1,26 +1,4 @@
 --[[
-queue convenience functions
-]]--
-do
-	local id = 0
-	queue.send_command = function(name, arg)
-		id = id + 1
-		local message = {type="command", name=name, arg=arg, id=id}
-		queue.write(message)
-		return id
-	end
-end
-queue.send_response = function(message, result)
-	local response = {type="response", result=result, id=message.id}
-	queue.write(response)
-end
-queue.send_hook = function(name, arg)
-	local message = {type="hook", name=name, arg=arg}
-	queue.write(message)
-end
-
-
---[[
 queue command functions
 ]]--
 local commands = {}
@@ -52,6 +30,44 @@ end
 
 
 --[[
+queue convenience functions
+]]--
+do
+	local id = 0
+	queue.send_command = function(name, arg)
+		id = id + 1
+		local message = {type="command", name=name, arg=arg, id=id}
+		queue.write(message)
+		return id
+	end
+end
+
+queue.send_response = function(message, result)
+	local response = {type="response", result=result, id=message.id}
+	queue.write(response)
+end
+
+queue.send_hook = function(name, arg)
+	local message = {type="hook", name=name, arg=arg}
+	queue.write(message)
+end
+
+queue.process = function(forced)
+	while forced or queue.readable() do
+		local message = queue.read()
+		if not message then
+			return
+		end
+		if message.type == "print" then
+			print(message.text)
+		elseif message.type == "command" and commands[message.name] then
+			commands[message.name](message)
+		end
+	end
+end
+
+
+--[[
 hook functions
 ]]--
 function command_hook(raw, arg)
@@ -66,12 +82,11 @@ end
 
 function frame_hook()
 	queue.send_hook("frame")
-	while queue.readable() do
-		local message = queue.read()
-		if message.type == "print" then
-			print(message.text)
-		elseif message.type == "command" and commands[message.name] then
-			commands[message.name](message)
-		end
-	end
+	queue.process()
 end
+
+
+--[[
+startup stuff
+]]--
+queue.process(true)

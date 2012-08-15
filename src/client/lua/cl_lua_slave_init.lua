@@ -146,16 +146,29 @@ hook.print = function(arg)
 	end
 end
 
-hook.frame = function(arg)
-	if tremulous.hook.frame then
-		local ok, result = pcall(tremulous.hook.frame)
-		if not ok then
-			tremulous.hook.frame = nil
-			print("Frame hook: "..result)
+do
+	local startup = false
+	hook.frame = function(arg)
+		if not startup then
+			startup = true
+			if tremulous.hook.startup then
+				local ok, result = pcall(tremulous.hook.startup)
+				if not ok then
+					tremulous.hook.startup = nil
+					print("Startup hook: "..result)
+				end
+			end
+		end
+
+		if tremulous.hook.frame then
+			local ok, result = pcall(tremulous.hook.frame)
+			if not ok then
+				tremulous.hook.frame = nil
+				print("Frame hook: "..result)
+			end
 		end
 	end
 end
-
 
 --[[
 startup stuff

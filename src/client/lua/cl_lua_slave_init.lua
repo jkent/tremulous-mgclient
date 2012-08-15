@@ -63,14 +63,14 @@ do
 	tremulous.command = setmetatable({__t=command}, mt)
 end
 
-tremulous.retain_console = false
+tremulous.restrict_output = false
 
 do
 	local mt = {__index=tremulous}
 	mt.__newindex = function(t, key, value)
-		if key == "retain_console" then
+		if key == "restrict_output" then
 			value = value and true or false
-			queue.send_command("set_retain_console", {value=value})
+			queue.send_command("set_restrict_output", {value=value})
 		end
 		t.__t[key] = value
 	end
@@ -100,12 +100,12 @@ hook.command = function(arg)
 	end
 end
 
-hook.console = function(arg)
-	if tremulous.hook.console then
-		local ok, result = pcall(tremulous.hook.console, arg.text)
+hook.print = function(arg)
+	if tremulous.hook.print then
+		local ok, result = pcall(tremulous.hook.print, arg.text)
 		if not ok then
-			tremulous.hook.console = nil
-			print("Console hook: "..result)
+			tremulous.print.console = nil
+			print("Print hook: "..result)
 		end
 	end
 end

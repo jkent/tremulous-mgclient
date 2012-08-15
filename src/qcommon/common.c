@@ -162,6 +162,12 @@ void QDECL Com_Printf( const char *fmt, ... ) {
 		return;
 	}
 
+#ifdef USE_LUA
+	if ( CL_LuaPrintHook( (const char *) msg ) ) {
+		return;
+	}
+#endif
+
 #ifndef DEDICATED
 	CL_ConsolePrint( msg );
 #endif

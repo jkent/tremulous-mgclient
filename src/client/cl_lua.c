@@ -161,10 +161,10 @@ qboolean CL_LuaCommandHook( void )
 
 /*
 ======================
-CL_LuaConsoleHook
+CL_LuaPrintHook
 ======================
 */
-qboolean CL_LuaConsoleHook( const char *text )
+qboolean CL_LuaPrintHook( const char *text )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
@@ -176,7 +176,7 @@ qboolean CL_LuaConsoleHook( const char *text )
 		return qfalse;
 	}
 
-	lua_getglobal(self->L, "console_hook");
+	lua_getglobal(self->L, "print_hook");
 	if ( !lua_isfunction(self->L, -1) ) {
 		lua_pop(self->L, 1);
 		return qfalse;

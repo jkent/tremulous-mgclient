@@ -46,9 +46,9 @@ commands.unregister_command = function(message)
 	command_registry[message.arg.name] = nil
 end
 
-local retain_console = false
-commands.set_retain_console = function(message)
-	retain_console = message.arg.value
+local restrict_output = false
+commands.set_restrict_output = function(message)
+	restrict_output = message.arg.value
 end
 
 
@@ -60,9 +60,9 @@ function command_hook(arg, raw)
 	return command_registry[arg[1]]
 end
 
-function console_hook(text)
-	queue.send_hook("console", {text=text})
-	return retain_console
+function print_hook(text)
+	queue.send_hook("print", {text=text})
+	return restrict_output
 end
 
 function frame_hook()

@@ -104,7 +104,7 @@ hook.print = function(arg)
 	if tremulous.hook.print then
 		local ok, result = pcall(tremulous.hook.print, arg.text)
 		if not ok then
-			tremulous.print.console = nil
+			tremulous.hook.print = nil
 			print("Print hook: "..result)
 		end
 	end

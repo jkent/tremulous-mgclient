@@ -9,12 +9,10 @@ do
 	local stashing_read = function()
 		if stashing then
 			message = normal_read()
-			--stash:insert(message)
 			table.insert(stash, message)
 			return message
 		else
 			if #stash >= 1 then
-				--return stash:remove(1)
 				return table.remove(stash, 1)
 			else
 				queue.read = normal_read

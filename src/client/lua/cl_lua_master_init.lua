@@ -29,7 +29,6 @@ commands.execute = function(message)
 end
 
 commands.get_cvar = function(message)
-	local result = 
 	queue.send_response(message, tremulous.get_cvar(message.arg.name))
 end
 
@@ -55,8 +54,8 @@ end
 --[[
 hook functions
 ]]--
-function command_hook(arg, raw)
-	queue.send_hook("command", {arg=arg, raw=raw})
+function command_hook(raw, arg)
+	queue.send_hook("command", {raw=raw, arg=arg})
 	return command_registry[arg[1]]
 end
 

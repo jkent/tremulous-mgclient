@@ -141,13 +141,13 @@ qboolean CL_LuaCommandHook( void )
 		return qfalse;
 	}
 
+	lua_pushstring(self->L, Cmd_Cmd());
 	argc = Cmd_Argc();
 	lua_createtable(self->L, argc, 0);
 	for ( i = 0; i < argc; i++ ) {
 		lua_pushstring(self->L, Cmd_Argv(i));
 		lua_rawseti(self->L, -2, i + 1);
 	}
-	lua_pushstring(self->L, Cmd_Cmd());
 
 	if ( lua_pcall(self->L, 2, 1, 0) ) {
 		CL_LuaPrintf("Lua error: %s\n",

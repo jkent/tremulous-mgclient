@@ -120,7 +120,7 @@ hook functions
 local hook = {}
 hook.command = function(arg)
 	if tremulous.hook.command then
-		local ok, result = pcall(tremulous.hook.command, arg.arg, arg.raw)
+		local ok, result = pcall(tremulous.hook.command, arg.raw, arg.arg)
 		if not ok then
 			tremulous.hook.command = nil
 			print('Command hook: '..result)
@@ -128,7 +128,7 @@ hook.command = function(arg)
 	end
 	local name = arg.arg[1]
 	if tremulous.command[name] then
-		local ok, result = pcall(tremulous.command[name], arg.arg, arg.raw)
+		local ok, result = pcall(tremulous.command[name], arg.raw, arg.arg)
 		if not ok then
 			tremulous.command[name] = nil
 			print("\""..name.."\" command hook: "..result)

@@ -136,12 +136,22 @@ hook.command = function(arg)
 	end
 end
 
-hook.print = function(arg)
-	if tremulous.hook.print then
-		local ok, result = pcall(tremulous.hook.print, arg.text)
+hook.connect = function(arg)
+	if tremulous.hook.connect then
+		local ok, result = pcall(tremulous.hook.connect, arg.addr)
 		if not ok then
-			tremulous.hook.print = nil
-			print("Print hook: "..result)
+			tremulous.command[name] = nil
+			print("\""..name.."\" command hook: "..result)
+		end
+	end
+end
+
+hook.disconnect = function(arg)
+	if tremulous.hook.disconnect then
+		local ok, result = pcall(tremulous.hook.disconnect)
+		if not ok then
+			tremulous.command[name] = nil
+			print("\""..name.."\" command hook: "..result)
 		end
 	end
 end
@@ -170,6 +180,17 @@ do
 	end
 end
 
+hook.print = function(arg)
+	if tremulous.hook.print then
+		local ok, result = pcall(tremulous.hook.print, arg.text)
+		if not ok then
+			tremulous.hook.print = nil
+			print("Print hook: "..result)
+		end
+	end
+end
+
+
 --[[
 startup stuff
 ]]--
@@ -179,9 +200,13 @@ local function configure_paths()
 	local ext = package.cpath:match("%.(%a+)$")
 
 	package.path = home.."/lua/?.lua;"..home.."/lua/?/init.lua;"..
-		base.."/lua/?.lua;"..base.."/lua/?/init.lua"
+		home.."/lua/lib/?.lua;"..home.."/lua/lib/?/init.lua;"..
+		base.."/lua/?.lua;"..base.."/lua/?/init.lua"..
+		base.."/lua/lib/?.lua;"..base.."/lua/lib/?/init.lua"
 	package.cpath = home.."/lua/?."..ext..";"..home.."/lua/loadall."..ext..";"..
-		base.."/lua/?."..ext..";"..base.."/lua/loadall."..ext
+		home.."/lua/lib/?."..ext..";"..home.."/lua/lib/loadall."..ext..";"..
+		base.."/lua/?."..ext..";"..base.."/lua/loadall."..ext..
+		base.."/lua/lib/?."..ext..";"..base.."/lua/lib/loadall."..ext
 end
 
 local function run_autoexec()

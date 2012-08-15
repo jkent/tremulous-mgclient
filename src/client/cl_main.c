@@ -1355,6 +1355,10 @@ void CL_Disconnect( qboolean showMainMenu ) {
 	Cmd_RemoveCommand ("voip");
 #endif
 
+#ifdef USE_LUA
+	CL_LuaDisconnectHook();
+#endif
+
 	if ( clc.demofile ) {
 		FS_FCloseFile( clc.demofile );
 		clc.demofile = 0;
@@ -2424,6 +2428,9 @@ void CL_ConnectionlessPacket( netadr_t from, msg_t *msg ) {
 		Netchan_Setup (NS_CLIENT, &clc.netchan, from, Cvar_VariableValue( "net_qport" ) );
 		cls.state = CA_CONNECTED;
 		clc.lastPacketSentTime = -9999;		// send first packet immediately
+#ifdef USE_LUA
+		CL_LuaConnectHook(NET_AdrToStringwPort(clc.serverAddress));
+#endif
 		return;
 	}
 

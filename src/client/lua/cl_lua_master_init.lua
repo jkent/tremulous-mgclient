@@ -75,14 +75,22 @@ function command_hook(raw, arg)
 	return command_registry[arg[1]]
 end
 
-function print_hook(text)
-	queue.send_hook("print", {text=text})
-	return restrict_output
+function connect_hook(addr)
+	queue.send_hook("connect", {addr=addr})
+end
+
+function disconnect_hook()
+	queue.send_hook("disconnect")
 end
 
 function frame_hook()
 	queue.send_hook("frame")
 	queue.process()
+end
+
+function print_hook(text)
+	queue.send_hook("print", {text=text})
+	return restrict_output
 end
 
 

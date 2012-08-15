@@ -161,6 +161,89 @@ qboolean CL_LuaCommandHook( void )
 
 /*
 ======================
+CL_LuaConnectHook
+======================
+*/
+void CL_LuaConnectHook( const char *addr )
+{
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	if ( !self->L ) {
+		return;
+	}
+
+	lua_getglobal(self->L, "connect_hook");
+	if ( !lua_isfunction(self->L, -1) ) {
+		lua_pop(self->L, 1);
+		return;
+	}
+
+	lua_pushstring(self->L, addr);
+	if ( lua_pcall(self->L, 1, 0, 0) ) {
+		CL_LuaPrintf("Lua error: %s\n",
+				lua_tostring(self->L, -1));
+		lua_pop(self->L, 1);
+	}
+
+	return;
+}
+
+/*
+======================
+CL_LuaDisconnectHook
+======================
+*/
+void CL_LuaDisconnectHook( void )
+{
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	if ( !self->L ) {
+		return;
+	}
+
+	lua_getglobal(self->L, "disconnect_hook");
+	if ( !lua_isfunction(self->L, -1) ) {
+		lua_pop(self->L, 1);
+		return;
+	}
+
+	if ( lua_pcall(self->L, 0, 0, 0) ) {
+		CL_LuaPrintf("Lua error: %s\n",
+				lua_tostring(self->L, -1));
+		lua_pop(self->L, 1);
+	}
+
+	return;
+}
+
+/*
+======================
+CL_LuaFrameHook
+======================
+*/
+void CL_LuaFrameHook( void )
+{
+	struct cl_luaMasterData_t *self = &cl_luaMasterData;
+
+	if ( !self->L ) {
+		return;
+	}
+
+	lua_getglobal(self->L, "frame_hook");
+	if ( !lua_isfunction(self->L, -1) ) {
+		lua_pop(self->L, 1);
+		return;
+	}
+
+	if ( lua_pcall(self->L, 0, 0, 0) ) {
+		CL_LuaPrintf("Lua error: %s\n",
+				lua_tostring(self->L, -1));
+		lua_pop(self->L, 1);
+	}
+}
+
+/*
+======================
 CL_LuaPrintHook
 ======================
 */
@@ -198,30 +281,4 @@ qboolean CL_LuaPrintHook( const char *text )
 	}
 
 	return lua_toboolean(self->L, -1) ? qtrue : qfalse;
-}
-
-/*
-======================
-CL_LuaFrameHook
-======================
-*/
-void CL_LuaFrameHook( void )
-{
-	struct cl_luaMasterData_t *self = &cl_luaMasterData;
-
-	if ( !self->L ) {
-		return;
-	}
-
-	lua_getglobal(self->L, "frame_hook");
-	if ( !lua_isfunction(self->L, -1) ) {
-		lua_pop(self->L, 1);
-		return;
-	}
-
-	if ( lua_pcall(self->L, 0, 0, 0) ) {
-		CL_LuaPrintf("Lua error: %s\n",
-				lua_tostring(self->L, -1));
-		lua_pop(self->L, 1);
-	}
 }

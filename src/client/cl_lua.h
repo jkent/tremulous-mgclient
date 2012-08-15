@@ -34,9 +34,12 @@ extern struct cl_luaMasterData_t cl_luaMasterData;
 void CL_LuaInit( void );
 void CL_LuaShutdown( qboolean full );
 void CL_LuaRestart( void );
+
 qboolean CL_LuaCommandHook( void );
-qboolean CL_LuaPrintHook( const char *text );
+void CL_LuaConnectHook( const char *addr );
+void CL_LuaDisconnectHook( void );
 void CL_LuaFrameHook( void );
+qboolean CL_LuaPrintHook( const char *text );
 
 
 /* cl_lua_print.c */

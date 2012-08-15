@@ -1,21 +1,38 @@
-local function loop(wait_id)
-	while not stopped() do
-		local message = queue.read()
-		if message then
-			if message.type == "response" and message.id == wait_id then
-				return message
-			else
-				--TODO: stash discarded messages
-			end
-		end
-	end
-end
-
-
 --[[
 queue convenience functions
 ]]--
 do
+	local stash = {}
+	local stashing = false
+
+	local normal_read = queue.read
+	local stashing_read = function()
+		if stashing then
+			message = normal_read()
+			--stash:insert(message)
+			table.insert(stash, message)
+			return message
+		else
+			if #stash >= 1 then
+				--return stash:remove(1)
+				return table.remove(stash, 1)
+			else
+				queue.read = normal_read
+				return normal_read()
+			end
+		end
+	end
+
+	queue.stash_begin = function()
+		stashing = true
+		queue.read = stashing_read
+	end
+	
+	queue.stash_end = function()
+		table.remove(stash)
+		stashing = false
+	end
+
 	local id = 0
 	queue.send_command = function(name, arg)
 		id = id + 1
@@ -30,6 +47,27 @@ queue.send_response = function(message, result)
 	queue.write(response)
 end
 
+queue.wait = function(condition)
+	queue.stash_begin()
+	while not stopped() do
+		local message = queue.read()
+		if message then
+			if condition(message) then
+				queue.stash_end()
+				return message
+			end
+		end
+	end
+end
+
+queue.wait_response = function(id)
+	condition = function(message)
+		return message.type == "response" and message.id == id
+	end
+		 
+	return queue.wait(condition)
+end
+
 
 --[[
 tremulous 'library'
@@ -41,7 +79,7 @@ tremulous.execute = function(text)
 end
 
 tremulous.get_cvar = function(name)
-	return loop(queue.send_command("get_cvar", {name=name})).result
+	return queue.wait_response(queue.send_command("get_cvar", {name=name})).result
 end
 
 tremulous.set_cvar = function(name, value)

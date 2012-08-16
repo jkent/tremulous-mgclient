@@ -76,12 +76,23 @@ tremulous.execute = function(text)
 	queue.send_command("execute", {text=text})
 end
 
-tremulous.get_cvar = function(name)
-	return queue.wait_response(queue.send_command("get_cvar", {name=name})).result
-end
-
-tremulous.set_cvar = function(name, value)
-	queue.send_command("set_cvar", {name=name, value=value})
+do
+	local mt = {}
+	mt.__newindex = function(t, key, value)
+		if type(value) == "boolean" then
+			value = value and "1" or "0"
+		elseif type(value) == "number" then
+			value = tostring(value)
+		elseif type ~= "string" then
+			return
+		end
+		queue.send_command("set_cvar", {name=key, value=value})
+	end
+	mt.__index = function(t, key)
+		local id = queue.send_command("get_cvar", {name=key})
+		return queue.wait_response(id).result
+	end
+	tremulous.cvar = setmetatable({}, mt)
 end
 
 do
@@ -195,8 +206,8 @@ end
 startup stuff
 ]]--
 local function configure_paths()
-	local base = tremulous.get_cvar("fs_basepath")
-	local home = tremulous.get_cvar("fs_homepath")
+	local base = tremulous.cvar["fs_basepath"]
+	local home = tremulous.cvar["fs_homepath"]
 	local ext = package.cpath:match("%.(%a+)$")
 
 	package.path = home.."/lua/?.lua;"..home.."/lua/?/init.lua;"..

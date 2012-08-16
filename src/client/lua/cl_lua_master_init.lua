@@ -14,6 +14,10 @@ commands.set_cvar = function(message, name, value)
 	tremulous.set_cvar(name, value)
 end
 
+commands.get_server = function(message)
+	queue.send_response(message, tremulous.get_server())
+end
+
 local command_registry = {}
 commands.register_command = function(message, name)
 	command_registry[name] = true

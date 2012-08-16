@@ -149,13 +149,20 @@ end
 tremulous.restrict_output = false
 
 do
-	local mt = {__index=tremulous}
+	local mt = {}
 	mt.__newindex = function(t, key, value)
 		if key == "restrict_output" then
 			value = value and true or false
 			queue.send_command("set_restrict_output", value)
 		end
 		t.__t[key] = value
+	end
+	mt.__index = function(t, key)
+		if key == "server" then
+			local id = queue.send_command("get_server")
+			return queue.wait_response(id).result
+		end
+		return t.__t[key]
 	end
 	tremulous = setmetatable({__t=tremulous}, mt)
 end

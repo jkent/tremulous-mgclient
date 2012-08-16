@@ -2,6 +2,7 @@
 #include "lauxlib.h"
 #include "../qcommon/q_shared.h"
 #include "../qcommon/qcommon.h"
+#include "../client/client.h"
 #include "../client/cl_lua.h"
 
 static int ltremulous_execute( lua_State *L )
@@ -58,10 +59,22 @@ static int ltremulous_set_cvar( lua_State *L )
 	return 0;
 }
 
+static int ltremulous_get_server( lua_State *L )
+{
+	if ( cls.state < CA_CONNECTED || cls.state == CA_CINEMATIC ) {
+		lua_pushnil(L);
+		return 1;
+	}
+
+	lua_pushstring(L, NET_AdrToStringwPort(clc.serverAddress));
+	return 1;
+}
+
 static const luaL_Reg tremulouslib[] = {
 	{"execute", ltremulous_execute},
 	{"get_cvar", ltremulous_get_cvar},
 	{"set_cvar", ltremulous_set_cvar},
+	{"get_server", ltremulous_get_server},
 	{NULL, NULL}
 };
 

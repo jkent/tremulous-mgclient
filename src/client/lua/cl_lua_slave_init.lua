@@ -113,6 +113,11 @@ tremulous.execute = function(text)
 end
 
 do
+	local cacheable = { 
+		["arch"] = true, 
+		["fs_basepath"] = true, 
+		["fs_homepath"] = true,
+	}
 	local mt = {}
 	mt.__newindex = function(t, key, value)
 		if type(value) == "boolean" then
@@ -126,7 +131,11 @@ do
 	end
 	mt.__index = function(t, key)
 		local id = queue.send_command("get_cvar", key)
-		return queue.wait_response(id).result
+		local value = queue.wait_response(id).result
+		if cacheable[key] then
+			rawset(t, key, value)
+		end
+		return value
 	end
 	tremulous.cvar = setmetatable({}, mt)
 end

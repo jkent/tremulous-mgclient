@@ -1521,6 +1521,7 @@ ifeq ($(USE_LUA),1)
     $(B)/lua/loadlib.o \
     $(B)/lua/ltremulouslib.o \
     $(B)/lua/lqueuelib.o \
+    $(B)/lua/lfs.o \
     $(B)/client/cl_lua.o \
     $(B)/client/cl_lua_master_init.o \
     $(B)/client/cl_lua_print.o \

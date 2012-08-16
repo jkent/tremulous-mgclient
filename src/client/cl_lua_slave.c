@@ -1,5 +1,6 @@
 #include "cl_lua.h"
 #include "../lua/lqueuelib.h"
+#include "../lua/lfs.h"
 
 #ifdef USE_LUASOCKET
 #include "../lua/socket/luasocket.h"
@@ -31,6 +32,7 @@ static const luaL_Reg preloadedlibs[] = {
 	{LUA_BITLIBNAME, luaopen_bit32},
 	{LUA_MATHLIBNAME, luaopen_math},
 	{LUA_DBLIBNAME, luaopen_debug},
+	{"lfs", luaopen_lfs},
 #ifdef USE_LUASOCKET
 	{"socket.core", luaopen_socket_core},
 	{"mime.core",  luaopen_mime_core},

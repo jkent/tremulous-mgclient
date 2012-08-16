@@ -201,11 +201,11 @@ local function configure_paths()
 
 	package.path = home.."/lua/?.lua;"..home.."/lua/?/init.lua;"..
 		home.."/lua/lib/?.lua;"..home.."/lua/lib/?/init.lua;"..
-		base.."/lua/?.lua;"..base.."/lua/?/init.lua"..
+		base.."/lua/?.lua;"..base.."/lua/?/init.lua;"..
 		base.."/lua/lib/?.lua;"..base.."/lua/lib/?/init.lua"
 	package.cpath = home.."/lua/?."..ext..";"..home.."/lua/loadall."..ext..";"..
 		home.."/lua/lib/?."..ext..";"..home.."/lua/lib/loadall."..ext..";"..
-		base.."/lua/?."..ext..";"..base.."/lua/loadall."..ext..
+		base.."/lua/?."..ext..";"..base.."/lua/loadall."..ext..";"..
 		base.."/lua/lib/?."..ext..";"..base.."/lua/lib/loadall."..ext
 end
 

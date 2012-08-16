@@ -2,30 +2,30 @@
 queue command functions
 ]]--
 local commands = {}
-commands.execute = function(message)
-	tremulous.execute(message.arg.text)
+commands.execute = function(message, text)
+	tremulous.execute(text)
 end
 
-commands.get_cvar = function(message)
-	queue.send_response(message, tremulous.get_cvar(message.arg.name))
+commands.get_cvar = function(message, name)
+	queue.send_response(message, tremulous.get_cvar(name))
 end
 
-commands.set_cvar = function(message)
-	tremulous.set_cvar(message.arg.name, message.arg.value)
+commands.set_cvar = function(message, name, value)
+	tremulous.set_cvar(name, value)
 end
 
 local command_registry = {}
-commands.register_command = function(message)
-	command_registry[message.arg.name] = true
+commands.register_command = function(message, name)
+	command_registry[name] = true
 end
 
-commands.unregister_command = function(message)
-	command_registry[message.arg.name] = nil
+commands.unregister_command = function(message, name)
+	command_registry[name] = nil
 end
 
 local restrict_output = false
-commands.set_restrict_output = function(message)
-	restrict_output = message.arg.value
+commands.set_restrict_output = function(message, value)
+	restrict_output = value
 end
 
 
@@ -34,9 +34,9 @@ queue convenience functions
 ]]--
 do
 	local id = 0
-	queue.send_command = function(name, arg)
+	queue.send_command = function(name, ...)
 		id = id + 1
-		local message = {type="command", name=name, arg=arg, id=id}
+		local message = {type="command", name=name, arg={...}, id=id}
 		queue.write(message)
 		return id
 	end
@@ -47,8 +47,8 @@ queue.send_response = function(message, result)
 	queue.write(response)
 end
 
-queue.send_hook = function(name, arg)
-	local message = {type="hook", name=name, arg=arg}
+queue.send_hook = function(name, ...)
+	local message = {type="hook", name=name, arg={...}}
 	queue.write(message)
 end
 
@@ -61,7 +61,7 @@ queue.process = function(forced)
 		if message.type == "print" then
 			print(message.text)
 		elseif message.type == "command" and commands[message.name] then
-			commands[message.name](message)
+			commands[message.name](message, table.unpack(message.arg))
 		end
 	end
 end
@@ -71,12 +71,12 @@ end
 hook functions
 ]]--
 function command_hook(raw, arg)
-	queue.send_hook("command", {raw=raw, arg=arg})
+	queue.send_hook("command", raw, arg)
 	return command_registry[arg[1]]
 end
 
 function connect_hook(addr)
-	queue.send_hook("connect", {addr=addr})
+	queue.send_hook("connect", addr)
 end
 
 function disconnect_hook()
@@ -96,7 +96,7 @@ do
 		else
 			text = buffer..text:sub(1,-2)
 			buffer = ""
-			queue.send_hook("print", {text=text})
+			queue.send_hook("print", text)
 		end
 		return restrict_output
 	end

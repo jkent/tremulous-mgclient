@@ -32,9 +32,9 @@ do
 	end
 
 	local id = 0
-	queue.send_command = function(name, arg)
+	queue.send_command = function(name, ...)
 		id = id + 1
-		local message = {type="command", name=name, arg=arg, id=id}
+		local message = {type="command", name=name, arg={...}, id=id}
 		queue.write(message)
 		return id
 	end
@@ -72,8 +72,44 @@ tremulous 'library'
 ]]--
 tremulous = {hook={}}
 
+tremulous.add_hook = function(name, fn)
+	local hooks = tremulous.hook[name] 
+	if not hooks then
+		hooks = {}
+		tremulous.hook[name] = hooks
+	end
+	table.insert(hooks, fn)
+end 
+
+tremulous.remove_hook = function(name, fn)
+	local hooks = tremulous.hook[name]
+	if not hooks then
+		return
+	end
+	for i,hook in ipairs(hooks) do
+		if hook == fn then
+			table.remove(hooks, i)
+			return
+		end
+	end
+end
+
+tremulous.call_hook = function(name, ...)
+	local hooks = tremulous.hook[name]
+	if not hooks then
+		return
+	end
+	for i, hook in ipairs(hooks) do
+		local ok, result = pcall(hook, ...)
+		if not ok then
+			table.remove(hooks, i)
+			print("name hook: "..result)
+		end
+	end
+end
+
 tremulous.execute = function(text)
-	queue.send_command("execute", {text=text})
+	queue.send_command("execute", text)
 end
 
 do
@@ -83,13 +119,13 @@ do
 			value = value and "1" or "0"
 		elseif type(value) == "number" then
 			value = tostring(value)
-		elseif type ~= "string" then
+		elseif type(value) ~= "string" then
 			return
 		end
-		queue.send_command("set_cvar", {name=key, value=value})
+		queue.send_command("set_cvar", key, value)
 	end
 	mt.__index = function(t, key)
-		local id = queue.send_command("get_cvar", {name=key})
+		local id = queue.send_command("get_cvar", key)
 		return queue.wait_response(id).result
 	end
 	tremulous.cvar = setmetatable({}, mt)
@@ -100,9 +136,9 @@ do
 	local mt = {__index=command}
 	mt.__newindex = function(t, key, value)
 		if type(value) == "function" then
-			queue.send_command("register_command", {name=key})
+			queue.send_command("register_command", key)
 		else
-			queue.send_command("unregister_command", {name=key})
+			queue.send_command("unregister_command", key)
 			value = nil
 		end
 		t.__t[key] = value
@@ -117,88 +153,11 @@ do
 	mt.__newindex = function(t, key, value)
 		if key == "restrict_output" then
 			value = value and true or false
-			queue.send_command("set_restrict_output", {value=value})
+			queue.send_command("set_restrict_output", value)
 		end
 		t.__t[key] = value
 	end
 	tremulous = setmetatable({__t=tremulous}, mt)
-end
-
-
---[[
-hook functions
-]]--
-local hook = {}
-hook.command = function(arg)
-	if tremulous.hook.command then
-		local ok, result = pcall(tremulous.hook.command, arg.raw, arg.arg)
-		if not ok then
-			tremulous.hook.command = nil
-			print('Command hook: '..result)
-		end
-	end
-	local name = arg.arg[1]
-	if tremulous.command[name] then
-		local ok, result = pcall(tremulous.command[name], arg.raw, arg.arg)
-		if not ok then
-			tremulous.command[name] = nil
-			print("\""..name.."\" command hook: "..result)
-		end
-	end
-end
-
-hook.connect = function(arg)
-	if tremulous.hook.connect then
-		local ok, result = pcall(tremulous.hook.connect, arg.addr)
-		if not ok then
-			tremulous.command[name] = nil
-			print("\""..name.."\" command hook: "..result)
-		end
-	end
-end
-
-hook.disconnect = function(arg)
-	if tremulous.hook.disconnect then
-		local ok, result = pcall(tremulous.hook.disconnect)
-		if not ok then
-			tremulous.command[name] = nil
-			print("\""..name.."\" command hook: "..result)
-		end
-	end
-end
-
-do
-	local startup = false
-	hook.frame = function(arg)
-		if not startup then
-			startup = true
-			if tremulous.hook.startup then
-				local ok, result = pcall(tremulous.hook.startup)
-				if not ok then
-					tremulous.hook.startup = nil
-					print("Startup hook: "..result)
-				end
-			end
-		end
-
-		if tremulous.hook.frame then
-			local ok, result = pcall(tremulous.hook.frame)
-			if not ok then
-				tremulous.hook.frame = nil
-				print("Frame hook: "..result)
-			end
-		end
-	end
-end
-
-hook.print = function(arg)
-	if tremulous.hook.print then
-		local ok, result = pcall(tremulous.hook.print, arg.text)
-		if not ok then
-			tremulous.hook.print = nil
-			print("Print hook: "..result)
-		end
-	end
 end
 
 
@@ -246,8 +205,18 @@ return function()
 	while not stopped() do
 		local message = queue.read()
 		if message then
-			if message.type == "hook" and hook[message.name] then
-				hook[message.name](message.arg)
+			if message.type == "hook" then
+				tremulous.call_hook(message.name, table.unpack(message.arg))
+				if message.name == "command" then
+					local name = message.arg[2][1]
+					if tremulous.command[name] then
+						local ok, result = pcall(tremulous.command[name], table.unpack(message.arg))
+						if not ok then
+							tremulous.command[name] = nil
+							print("\""..name.."\" command hook: "..result)
+						end
+					end
+				end
 			end
 		end
 	end

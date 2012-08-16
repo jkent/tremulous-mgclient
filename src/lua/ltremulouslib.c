@@ -51,16 +51,7 @@ static int ltremulous_set_cvar( lua_State *L )
 		return 0;
 	}
 	name = lua_tostring(L, 1);
-
-	if ( lua_isnil(L, 2) ) {
-		Cvar_Reset(name);
-		return 0;
-	}
-
 	value = lua_tostring(L, 2);
-	if ( !value ) {
-		return 0;
-	}
 
 	Cvar_Set2(name, value, qfalse);
 

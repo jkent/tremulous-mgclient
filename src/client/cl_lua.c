@@ -7,6 +7,7 @@ struct cl_luaMasterData_t cl_luaMasterData = {0};
 static const luaL_Reg loadedlibs[] = {
 	{"_G", luaopen_base},
 	{LUA_STRLIBNAME, luaopen_string},
+	{LUA_TABLIBNAME, luaopen_table},
 	{LUA_QUEUELIBNAME, luaopen_queue},
 	{LUA_TREMULOUSLIBNAME, luaopen_tremulous},
 	{NULL, NULL}

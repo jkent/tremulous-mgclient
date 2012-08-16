@@ -88,9 +88,18 @@ function frame_hook()
 	queue.process()
 end
 
-function print_hook(text)
-	queue.send_hook("print", {text=text})
-	return restrict_output
+do
+	local buffer = ""
+	function print_hook(text)
+		if text:sub(-1) ~= "\n" then
+			buffer = buffer..text
+		else
+			text = buffer..text:sub(1,-2)
+			buffer = ""
+			queue.send_hook("print", {text=text})
+		end
+		return restrict_output
+	end
 end
 
 

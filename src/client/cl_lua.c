@@ -6,6 +6,7 @@ struct cl_luaMasterData_t cl_luaMasterData = {0};
 
 static const luaL_Reg loadedlibs[] = {
 	{"_G", luaopen_base},
+	{LUA_STRLIBNAME, luaopen_string},
 	{LUA_QUEUELIBNAME, luaopen_queue},
 	{LUA_TREMULOUSLIBNAME, luaopen_tremulous},
 	{NULL, NULL}
@@ -251,10 +252,6 @@ qboolean CL_LuaPrintHook( const char *text )
 {
 	struct cl_luaMasterData_t *self = &cl_luaMasterData;
 
-	luaL_Buffer B;
-	int len;
-	char *s;
-
 	if ( self->printing || !self->L ) {
 		return qfalse;
 	}
@@ -265,14 +262,7 @@ qboolean CL_LuaPrintHook( const char *text )
 		return qfalse;
 	}
 
-	len = strlen(text);
-	if ( text[len - 1] == '\n' ) {
-		len -= 1;
-	}
-	s = luaL_buffinitsize(self->L, &B, len);
-	memcpy(s, text, len);
-	luaL_pushresultsize(&B, len);
-
+	lua_pushstring(self->L, text);
 	if ( lua_pcall(self->L, 1, 1, 0) ) {
 		CL_LuaPrintf("Lua error: %s\n",
 				lua_tostring(self->L, -1));

@@ -94,7 +94,34 @@ tremulous.remove_hook = function(name, fn)
 	end
 end
 
+local function print_hook(text)
+	local hooks = tremulous.hook["print"]
+	if not hooks then
+		print(text)
+		return
+	end
+
+	for i, hook in ipairs(hooks) do
+		local ok, result = pcall(hook, text)
+		if ok then
+			if not result then
+				return
+			end
+			text = result
+		else
+			table.remove(hooks, i)
+			print("print hook: "..result)
+		end
+	end
+	print(text)
+end
+
 tremulous.call_hook = function(name, ...)
+	if name == "print" then
+		print_hook(...)
+		return
+	end
+
 	local hooks = tremulous.hook[name]
 	if not hooks then
 		return
@@ -103,7 +130,7 @@ tremulous.call_hook = function(name, ...)
 		local ok, result = pcall(hook, ...)
 		if not ok then
 			table.remove(hooks, i)
-			print("name hook: "..result)
+			print(name.." hook: "..result)
 		end
 	end
 end
@@ -155,17 +182,8 @@ do
 	tremulous.command = setmetatable({__t=command}, mt)
 end
 
-tremulous.restrict_output = false
-
 do
 	local mt = {}
-	mt.__newindex = function(t, key, value)
-		if key == "restrict_output" then
-			value = value and true or false
-			queue.send_command("set_restrict_output", value)
-		end
-		t.__t[key] = value
-	end
 	mt.__index = function(t, key)
 		if key == "server" then
 			local id = queue.send_command("get_server")

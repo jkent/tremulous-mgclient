@@ -23,15 +23,6 @@ commands.register_command = function(message, name)
 	command_registry[name] = true
 end
 
-commands.unregister_command = function(message, name)
-	command_registry[name] = nil
-end
-
-local restrict_output = false
-commands.set_restrict_output = function(message, value)
-	restrict_output = value
-end
-
 
 --[[
 queue convenience functions
@@ -102,7 +93,7 @@ do
 			buffer = ""
 			queue.send_hook("print", text)
 		end
-		return restrict_output
+		return true
 	end
 end
 

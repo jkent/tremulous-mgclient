@@ -4,6 +4,8 @@
 # GNU Make required
 #
 
+CC=gcc-4.6
+
 COMPILE_PLATFORM=$(shell uname|sed -e s/_.*//|tr '[:upper:]' '[:lower:]')
 
 COMPILE_ARCH=$(shell uname -m | sed -e s/i.86/x86/)
@@ -107,6 +109,10 @@ endif
 
 ifndef USE_LUASQLITE
 USE_LUASQLITE=1
+endif
+
+ifndef USE_LUAREGEX
+USE_LUAREGEX=1
 endif
 
 ifndef USE_OPENAL
@@ -998,6 +1004,7 @@ makedirs:
 	@if [ ! -d $(B)/lua ];then $(MKDIR) $(B)/lua;fi
 	@if [ ! -d $(B)/lua/socket ];then $(MKDIR) $(B)/lua/socket;fi
 	@if [ ! -d $(B)/lua/sqlite ];then $(MKDIR) $(B)/lua/sqlite;fi
+	@if [ ! -d $(B)/lua/regex ];then $(MKDIR) $(B)/lua/regex;fi
 	@if [ ! -d $(B)/base ];then $(MKDIR) $(B)/base;fi
 	@if [ ! -d $(B)/base/cgame ];then $(MKDIR) $(B)/base/cgame;fi
 	@if [ ! -d $(B)/base/game ];then $(MKDIR) $(B)/base/game;fi
@@ -1573,6 +1580,15 @@ $(B)/lua/sqlite/sqlite3.o: $(LUADIR)/sqlite/sqlite3.c
 	$(echo_cmd) "CC $<"
 	$(Q)$(CC) $(NOTSHLIBCFLAGS) $(filter-out -ffast-math,$(CFLAGS)) -o $@ -c $<
 endif # USE_LUASQLITE
+
+ifeq ($(USE_LUAREGEX),1)
+  BASE_CFLAGS += -DUSE_LUAREGEX
+  Q3OBJ += \
+  	$(B)/lua/regex/common.o \
+  	$(B)/lua/regex/lpcre.o \
+  	$(B)/lua/regex/lpcre_f.o
+  CLIENT_LDFLAGS += -lpcre
+endif # USE_LUAREGEX
 
 endif # USE_LUA
 

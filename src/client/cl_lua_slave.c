@@ -14,6 +14,10 @@
 #include "../lua/sqlite/lsqlite3.h"
 #endif
 
+#ifdef USE_LUAREGEX
+#include "../lua/regex/lregex.h"
+#endif
+
 static struct cl_luaSlaveData_t cl_luaSlaveData = {0};
 
 static const luaL_Reg loadedlibs[] = {
@@ -42,6 +46,9 @@ static const luaL_Reg preloadedlibs[] = {
 #endif
 #ifdef USE_LUASQLITE
 	{"sqlite3", luaopen_lsqlite3},
+#endif
+#ifdef USE_LUAREGEX
+	{REX_LIBNAME, REX_OPENLIB},
 #endif
 	{NULL, NULL}
 };
